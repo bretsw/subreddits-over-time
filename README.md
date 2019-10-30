@@ -5,17 +5,22 @@ Study of the r/Teachers subreddit over time - https://www.reddit.com/r/Teachers/
 
 ## Data Collection
 
-1. Go to: https://bigquery.cloud.google.com/dataset/fh-bigquery:reddit_comments
-2. Choose “Try the new UI”
-3. Paste in script for comments:
+1. Go to: https://console.cloud.google.com/bigquery/
+
+**Collect subreddit posts:**
+
+2. To collect all posts, in the `Query Editor`, paste in this script:
 
 SELECT * FROM \`fh-bigquery.reddit_posts.20*\` WHERE subreddit = 'Teachers'
 
-4. Open `More >>> Query settings` and selected `SQL dialect = Standard`
-5. Run.
-6. Save results >>> `CSV (Google Drive)`
-7. Paste in script for posts:
+3.  Run.
+4. Save results >>> `CSV (Google Drive)`
 
-SELECT * FROM \`fh-bigquery.reddit_posts.20*\` WHERE subreddit = 'Teachers'
+**Collect subreddit responses:**
 
-8. Save results >>> `CSV (Google Drive)`
+5. To collect all responses, in the `Query Editor`, paste in this script:
+
+SELECT * FROM \`fh-bigquery.reddit_comments.20*\` WHERE subreddit = 'Teachers'
+
+6. Run.
+7. Save results >>> `CSV (Google Drive)`
