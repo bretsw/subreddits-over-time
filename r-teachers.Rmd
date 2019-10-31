@@ -28,7 +28,7 @@ library(ggraph)  # for visualizing the social network
 2. Set up settings for sharing 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo=TRUE)
 usethis::use_git_ignore(c("*.csv", "*.rds"))
 ```
 
@@ -168,7 +168,24 @@ ggplot(data = to_plot, mapping = aes(x=day, y=n, color=type)) +
 
 ```{r, include=FALSE}
 ## save the figure
-ggsave("contributions-over-time.png", width = 16, height = 9)
+#ggsave("contributions-over-time.png", width = 16, height = 9)
+```
+
+```{r, include=FALSE}
+## Print the slopes of the linear regressions:
+post_fit <- to_plot %>% 
+        filter(type=='post') %>% 
+        lm(n ~ day, data = .)
+post_slope <- post_fit$coefficients[[2]] %>% round(2)
+post_slope_pval <- summary(post_fit)$coef[2,4] %>% round(8)
+
+response_fit <- to_plot %>% 
+        filter(type=='response') %>% 
+        lm(n ~ day, data = .)
+response_slope <- response_fit$coefficients[[2]] %>% round(2)
+response_slope_pval <- summary(response_fit)$coef[2,4] %>% round(8)
+
+paste0("The slope of the `post` linear regression is ", post_slope, " (p=", post_slope_pval, "), and the slope of the `response` linear regression is ", response_slope, " (p=",response_slope_pval, ").")
 ```
 
 ## Table 1. Overall contributions in r/Teachers
