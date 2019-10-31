@@ -1,0 +1,423 @@
+---
+title: 'For the Longest Time: Continuity and Change in One Teaching-Related Subreddit'
+author: "K. Bret Staudt Willet & Jeffrey P. Carpenter"
+date: "11/01/2019"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    float_toc: yes
+    toc: yes
+---
+
+# Get set up
+
+This section loads the data and packages and starts to process the data, but doesn't calculate any statistics or create any results.
+
+1. Load packages
+
+```{r, include=FALSE}
+library(knitr)
+library(tidyverse)  # for data manipulation
+library(anytime)
+library(lubridate)  # for working with dates
+library(igraph)  # for processing the social network
+library(ggraph)  # for visualizing the social network
+```
+
+2. Set up settings for sharing 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+usethis::use_git_ignore(c("*.csv", "*.rds"))
+```
+
+3. Load subreddit posts
+
+```{r, include=FALSE}
+posts <- read.csv("r-teaching-posts.csv", 
+                            header=TRUE, 
+                            colClasses='character'
+                            ) %>%
+        as.data.frame() %>%
+        rename(post_id = id, 
+               post_author = author,
+               post_voting_score = score,
+               post_text = selftext
+               ) %>%
+        mutate(post_date_time = created_utc %>% 
+                       as.numeric() %>% 
+                       anytime(asUTC=TRUE) %>% 
+                       as_datetime %>%
+                       ymd_hms() %>%
+                       with_tz(tzone="US/Eastern"),
+               post_voting_score = post_voting_score %>% as.numeric(),
+               post_year = year(post_date_time),
+               post_word_count = str_count(title, "\\s+") + 
+                       str_count(post_text, "\\s+") + 2
+               ) %>%
+        distinct(post_id, .keep_all = TRUE) %>%
+        filter(post_id != "",
+               !is.na(post_id),
+               post_author != "",
+               post_author != "[deleted]",
+               post_text != "[deleted]",
+               post_text != "[removed]"
+               )
+```
+
+4. Load subreddit responses
+
+```{r, include=FALSE}
+responses <- read.csv("r-teaching-responses.csv", 
+                            header=TRUE, 
+                            colClasses='character'
+                            ) %>%
+        as.data.frame() %>% 
+        rename(response_id = id, 
+               response_author = author,
+               response_voting_score = score,
+               response_text = body) %>%
+        mutate(thread_id = str_remove(link_id, pattern="t[0-9]_"),
+               parent_id = str_remove(parent_id, pattern="t[0-9]_"),
+               response_date_time = created_utc %>% 
+                       as.numeric() %>% 
+                       anytime(asUTC=TRUE) %>% 
+                       as_datetime %>%
+                       ymd_hms() %>%
+                       with_tz(tzone="US/Eastern"),
+               post_id = thread_id,
+               response_voting_score = response_voting_score %>% as.numeric(),
+               response_year = year(response_date_time),
+               response_word_count = str_count(response_text, "\\s+") + 1
+               ) %>% 
+        distinct(response_id, .keep_all = TRUE) %>%
+        filter(response_id != "",
+               !is.na(response_id),
+               response_author != "",
+               response_author != "[deleted]",
+               response_text != "[deleted]",
+               response_text != "[removed]"
+               )
+```
+
+5. Create a merged dataframe of both posts and responses.
+
+```{r, include=FALSE}
+merged <- posts %>% inner_join(responses, by=c('post_id'))
+```
+
+# Analysis and Results
+
+## Figure 1. Contributions over time
+
+```{r, include=TRUE, echo=FALSE}
+#OlsonNames()  ## returns full list of timezones
+date_start <- c(merged$post_date_time, merged$response_date_time) %>% min()
+date_end <- c(merged$post_date_time, merged$response_date_time) %>% max()
+n_months <- (date_end - date_start) %>% time_length(unit="months")
+
+paste0("Our dataset includes activity in the r/Teachers subreddit from ", date(date_start), 
+      " to ", date(date_end), 
+      " (", round(n_months, 2), " months).")
+```
+
+```{r figure1, include=TRUE, echo=FALSE}
+to_plot_posts <- posts$post_date_time %>% 
+        floor_date("day") %>% 
+        as_date() %>%
+        table() %>% 
+        as.data.frame() %>%
+        rename(day = ".",
+               n = Freq) %>%
+        mutate(day = as_date(day),
+               type = "post") %>%
+        filter((day >= date_start) & (day <= date_end))
+to_plot_responses <- responses$response_date_time %>% 
+        floor_date("day") %>% 
+        as_date() %>%
+        table() %>% 
+        as.data.frame() %>%
+        rename(day = ".",
+               n = Freq) %>%
+        mutate(day = as_date(day),
+               type = "response") %>%
+        filter((day >= date_start) & (day <= date_end))
+
+to_plot <- full_join(to_plot_posts, to_plot_responses, by = c("day", "type", "n")) %>%
+        mutate(type = as.factor(type))
+
+ggplot(data = to_plot, mapping = aes(x=day, y=n, color=type)) +
+        geom_point(size = 1.5, alpha=.9) + 
+        geom_smooth(method=lm, se=FALSE, size=2) +
+        scale_y_continuous(trans='log10') +
+        xlab(NULL) +
+        ylab("Number of Contributions") +
+#        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "gray90"),
+              legend.position='bottom',
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=24, family='serif'),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Type of Contribution:')
+```
+
+```{r, include=FALSE}
+## save the figure
+ggsave("contributions-over-time.png", width = 16, height = 9)
+```
+
+## Table 1. Overall contributions in r/Teachers
+
+```{r table1, include=TRUE, echo=FALSE}
+n_posters <- merged %>% 
+        group_by(post_year) %>% 
+        summarize(n_posters = length(unique(post_author)))
+n_responders <- merged %>% 
+        group_by(post_year) %>% 
+        summarize(n_responders = length(unique(response_author)))
+n_contributors <- merged %>% 
+        group_by(post_year) %>% 
+        summarize(n_contributors = length(unique(c(post_author, response_author))))
+table1 <- n_contributors %>% 
+        full_join(n_posters, by="post_year") %>%
+        full_join(n_responders, by="post_year")
+knitr::kable(table1, 
+             align='l',
+             col.names=c("Year", "Contributors", "Posters", "Responders"))
+```
+
+## Table 2. Descriptive Statistics of Posts per Poster and Responses per Responder
+
+```{r table2, include=TRUE, echo=FALSE}
+posters <- merged$post_author %>%
+        table() %>% 
+        as.data.frame() %>%
+        rename(poster = '.', posts='Freq') %>%
+        arrange(desc(posts))
+responders <- merged$response_author %>%
+        table() %>% 
+        as.data.frame() %>%
+        rename(responder = '.', responses='Freq') %>%
+        arrange(desc(responses))
+stats_posters <- merged %>% 
+        group_by(post_year) %>% 
+        count(post_author) %>% 
+        summarize(mean_posts = round(mean(n), 2),
+                  sd_posts = round(sd(n), 2),
+                  median_posts = median(n),
+                  min_posts = min(n),
+                  max_posts = max(n)
+                  )
+stats_responders <- merged %>% 
+        group_by(post_year) %>% 
+        count(response_author) %>% 
+        summarize(mean_responses = round(mean(n), 2),
+                  sd_responses = round(sd(n), 2),
+                  median_responses = median(n),
+                  min_responses = min(n),
+                  max_responses = max(n)
+                  )
+table2 <- stats_posters %>%
+        full_join(stats_responders, by="post_year")
+knitr::kable(table2, 
+             align='l',
+             col.names=c("Year", "Mean", "SD", "Median", "Min", "Max",
+                         "Mean", "SD", "Median", "Min", "Max"))
+```
+
+## Table 3. Content Interaction by Posts, Threads, and Responses
+
+```{r table3, include=TRUE, echo=FALSE}
+## posts; nonzero-response posts; percentage of posts with some responses
+n_posts <- posts %>% 
+        group_by(post_year) %>% 
+        summarize(n_posts = length(unique(post_id)))
+n_threads <- merged %>% 
+        group_by(post_year) %>% 
+        summarize(n_threads = length(unique(thread_id)))
+n_responses <- merged %>% 
+        group_by(post_year) %>% 
+        summarize(n_responses = length(unique(response_id)))
+n_nonzero <- merged %>% 
+        group_by(post_year) %>% 
+        summarize(n_nonzero = length(unique(post_id)))
+words_per_post <- merged %>% 
+        distinct(post_id, .keep_all=TRUE) %>%
+        group_by(post_year) %>%
+        summarize(words_per_post = round(mean(post_word_count), 2))
+words_per_response <- merged %>% 
+        distinct(response_id, .keep_all=TRUE) %>%
+        group_by(post_year) %>%
+        summarize(words_per_response = round(mean(response_word_count), 2))
+table3 <- n_posts %>%
+        full_join(n_threads, by="post_year") %>%
+        full_join(n_responses, by="post_year") %>%
+        full_join(n_nonzero, by="post_year") %>%
+        mutate(response_rate = round((100 * n_nonzero / n_posts), 2),
+               responses_per_thread = round((n_responses / n_threads), 2)
+               ) %>%
+        select(-n_nonzero) %>%
+        full_join(words_per_post, by="post_year") %>% 
+        full_join(words_per_response, by="post_year")
+knitr::kable(table3, 
+             align='l',
+             col.names=c("Year", "Posts", "Threads", "Responses", "Response Rate",
+                         "Responses per Thread", "Words per Post", "Words per Response"))
+```
+
+## Table 4. Descriptive Statistics of Voting Scores of Posts and Responses
+
+```{r table4, include=TRUE, echo=FALSE}
+post_voting <- merged %>% 
+        distinct(post_id, .keep_all=TRUE) %>%
+        group_by(post_year) %>%
+        summarize(mean_post_voting = round(mean(post_voting_score), 2),
+                  sd_post_voting = round(sd(post_voting_score), 2),
+                  median_post_voting = median(post_voting_score),
+                  min_post_voting = min(post_voting_score),
+                  max_post_voting = max(post_voting_score)
+                  )
+response_voting <- merged %>% 
+        distinct(response_id, .keep_all=TRUE) %>%
+        group_by(post_year) %>%
+        summarize(mean_response_voting = round(mean(response_voting_score), 2),
+                  sd_response_voting = round(sd(response_voting_score), 2),
+                  median_response_voting= median(response_voting_score),
+                  min_response_voting = min(response_voting_score),
+                  max_response_voting = max(response_voting_score)
+                  )
+table4 <- post_voting %>%
+        full_join(response_voting, by="post_year")
+knitr::kable(table4, 
+             align='l',
+             col.names=c("Year", "Mean", "SD", "Median", "Min", "Max",
+                         "Mean", "SD", "Median", "Min", "Max"))
+```
+
+
+## Table 5. Social Interaction: Network Statistics by Year
+
+nodes, edges, transitivity, reciprocity, degree (mean, SD, median, min, max)
+
+```{r table5, include=TRUE, echo=FALSE}
+## retrieve the name of the parent author
+merged2 <- merged %>%
+        filter(parent_id %in% c(posts$post_id, responses$thread_id, responses$response_id)) %>%
+        mutate(parent_author = ifelse(parent_id %in% merged$post_id,
+                                      post_author,
+                                      response_author
+                                      )
+               )
+
+## create edgelist and then the network graph
+network_graph <- merged2 %>% 
+        select(response_author, parent_author) %>%
+        as.matrix() %>%
+        graph_from_edgelist(directed=TRUE) %>% 
+        set_vertex_attr(name='degree', value=degree(., mode='total', loops=FALSE))
+#summary(network_graph)
+
+network_graph16 <- merged2 %>% 
+        filter(post_year==2016) %>%
+        select(response_author, parent_author) %>%
+        as.matrix() %>%
+        graph_from_edgelist(directed=TRUE) %>% 
+        set_vertex_attr(name='degree', value=degree(., mode='total', loops=FALSE))
+#summary(network_graph16)
+
+network_graph17 <- merged2 %>% 
+        filter(post_year==2017) %>%
+        select(response_author, parent_author) %>%
+        as.matrix() %>%
+        graph_from_edgelist(directed=TRUE) %>% 
+        set_vertex_attr(name='degree', value=degree(., mode='total', loops=FALSE))
+#summary(network_graph17)
+
+network_graph18 <- merged2 %>% 
+        filter(post_year==2018) %>%
+        select(response_author, parent_author) %>%
+        as.matrix() %>%
+        graph_from_edgelist(directed=TRUE) %>% 
+        set_vertex_attr(name='degree', value=degree(., mode='total', loops=FALSE))
+#summary(network_graph18)
+
+network_graph19 <- merged2 %>% 
+        filter(post_year==2019) %>%
+        select(response_author, parent_author) %>%
+        as.matrix() %>%
+        graph_from_edgelist(directed=TRUE) %>% 
+        set_vertex_attr(name='degree', value=degree(., mode='total', loops=FALSE))
+#summary(network_graph19)
+
+year2016 <- c(length(V(network_graph16)),
+         gsize(network_graph16),
+         round(transitivity(network_graph16, "global") * 100, 2),
+         round(reciprocity(network_graph16, "global") * 100, 2)
+         )
+year2017 <- c(length(V(network_graph17)),
+         gsize(network_graph17),
+         round(transitivity(network_graph17, "global") * 100, 2),
+         round(reciprocity(network_graph17, "global") * 100, 2)
+         )
+year2018 <- c(length(V(network_graph18)),
+         gsize(network_graph18),
+         round(transitivity(network_graph18, "global") * 100, 2),
+         round(reciprocity(network_graph18, "global") * 100, 2)
+         )
+year2019 <- c(length(V(network_graph19)),
+         gsize(network_graph19),
+         round(transitivity(network_graph19, "global") * 100, 2),
+         round(reciprocity(network_graph19, "global") * 100, 2)
+         )
+table5 <- year2016 %>%
+        rbind(year2017) %>%
+        rbind(year2018) %>%
+        rbind(year2019) %>%
+        as.data.frame() %>%
+        rownames_to_column()
+colnames(table5) <- c("year", "nodes", "edges", "transitivity", "reciprocity")
+table5$year <- c(2016, 2017, 2018, 2019)
+
+table5 <- table5 %>%
+        mutate(mean = c(mean(vertex_attr(network_graph16, 'degree')), 
+                        mean(vertex_attr(network_graph17, 'degree')),
+                        mean(vertex_attr(network_graph18, 'degree')),
+                        mean(vertex_attr(network_graph19, 'degree'))
+                        ),
+               sd = c(sd(vertex_attr(network_graph16, 'degree')), 
+                        sd(vertex_attr(network_graph17, 'degree')),
+                        sd(vertex_attr(network_graph18, 'degree')),
+                        sd(vertex_attr(network_graph19, 'degree'))
+                        ),
+               median = c(median(vertex_attr(network_graph16, 'degree')), 
+                        median(vertex_attr(network_graph17, 'degree')),
+                        median(vertex_attr(network_graph18, 'degree')),
+                        median(vertex_attr(network_graph19, 'degree'))
+                        ),
+               min = c(min(vertex_attr(network_graph16, 'degree')), 
+                        min(vertex_attr(network_graph17, 'degree')),
+                        min(vertex_attr(network_graph18, 'degree')),
+                        min(vertex_attr(network_graph19, 'degree'))
+                        ),
+               max = c(max(vertex_attr(network_graph16, 'degree')), 
+                        max(vertex_attr(network_graph17, 'degree')),
+                        max(vertex_attr(network_graph18, 'degree')),
+                        max(vertex_attr(network_graph19, 'degree'))
+                        )
+               )
+knitr::kable(table5, 
+             align='l',
+             col.names=c("Year", "Nodes", "Edges", "Transitivity", "Reciprocity",
+                         "Mean", "SD", "Median", "Min", "Max"))
+```
+
+# Version/dependencies
+
+```{r, session-info}
+sessionInfo()
+```
