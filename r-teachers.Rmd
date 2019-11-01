@@ -200,27 +200,40 @@ n_responders <- merged %>%
 n_contributors <- merged %>% 
         group_by(post_year) %>% 
         summarize(n_contributors = length(unique(c(post_author, response_author))))
+n_multiple_posts <- merged %>% 
+        group_by(post_year) %>% 
+        count(post_author) %>%
+        filter(n>1) %>% 
+        summarize(multiple_posts = length(n))
+n_multiple_responses <- merged %>% 
+        group_by(post_year) %>% 
+        count(response_author) %>%
+        filter(n>1) %>% 
+        summarize(multiple_responses = length(n))
+stats_posters <- merged %>% 
+        group_by(post_year) %>% 
+        count(post_author) %>% 
+        summarize(mean_posts = round(mean(n), 2),
+                  sd_posts = round(sd(n), 2),
+                  median_posts = median(n),
+                  min_posts = min(n),
+                  max_posts = max(n)
+                  )
 table1 <- n_contributors %>% 
         full_join(n_posters, by="post_year") %>%
-        full_join(n_responders, by="post_year")
+        full_join(n_responders, by="post_year") %>%
+        mutate(multiple_posts = round(100 * n_multiple_posts$multiple_posts / n_posters, 2),
+               multiple_responses = round(100 * n_multiple_responses$multiple_responses / n_responders, 2)
+               )
 knitr::kable(table1, 
              align='l',
-             col.names=c("Year", "Contributors", "Posters", "Responders"))
+             col.names=c("Year", "Contributors", "Posters", "Responders", 
+                         "Multiple Posts", "Multiple Responses"))
 ```
 
 ## Table 2. Descriptive Statistics of Posts per Poster and Responses per Responder
 
 ```{r table2, include=TRUE, echo=FALSE}
-posters <- merged$post_author %>%
-        table() %>% 
-        as.data.frame() %>%
-        rename(poster = '.', posts='Freq') %>%
-        arrange(desc(posts))
-responders <- merged$response_author %>%
-        table() %>% 
-        as.data.frame() %>%
-        rename(responder = '.', responses='Freq') %>%
-        arrange(desc(responses))
 stats_posters <- merged %>% 
         group_by(post_year) %>% 
         count(post_author) %>% 
@@ -401,16 +414,16 @@ colnames(table5) <- c("year", "nodes", "edges", "transitivity", "reciprocity")
 table5$year <- c(2016, 2017, 2018, 2019)
 
 table5 <- table5 %>%
-        mutate(mean = c(mean(vertex_attr(network_graph16, 'degree')), 
-                        mean(vertex_attr(network_graph17, 'degree')),
-                        mean(vertex_attr(network_graph18, 'degree')),
-                        mean(vertex_attr(network_graph19, 'degree'))
+        mutate(mean = c(round(mean(vertex_attr(network_graph16, 'degree')), 2), 
+                        round(mean(vertex_attr(network_graph17, 'degree')), 2),
+                        round(mean(vertex_attr(network_graph18, 'degree')), 2),
+                        round(mean(vertex_attr(network_graph19, 'degree')), 2)
                         ),
-               sd = c(sd(vertex_attr(network_graph16, 'degree')), 
-                        sd(vertex_attr(network_graph17, 'degree')),
-                        sd(vertex_attr(network_graph18, 'degree')),
-                        sd(vertex_attr(network_graph19, 'degree'))
-                        ),
+               sd = c(round(sd(vertex_attr(network_graph16, 'degree')), 2),
+                      round(sd(vertex_attr(network_graph17, 'degree')), 2), 
+                      round(sd(vertex_attr(network_graph18, 'degree')), 2), 
+                      round(sd(vertex_attr(network_graph19, 'degree')), 2)
+                      ),
                median = c(median(vertex_attr(network_graph16, 'degree')), 
                         median(vertex_attr(network_graph17, 'degree')),
                         median(vertex_attr(network_graph18, 'degree')),
