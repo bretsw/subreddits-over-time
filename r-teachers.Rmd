@@ -1,7 +1,7 @@
 ---
 title: 'For the Longest Time: Continuity and Change in One Teaching-Related Subreddit'
 author: "K. Bret Staudt Willet & Jeffrey P. Carpenter"
-date: "11/01/2019"
+date: "11/04/2019"
 output:
   pdf_document:
     toc: yes
@@ -116,10 +116,16 @@ merged <- posts %>% inner_join(responses, by=c('post_id'))
 date_start <- c(merged$post_date_time, merged$response_date_time) %>% min()
 date_end <- c(merged$post_date_time, merged$response_date_time) %>% max()
 n_months <- (date_end - date_start) %>% time_length(unit="months")
+n_posts_overall <- length(unique(posts$post_id))
+n_responses_overall <- length(unique(merged$response_id))
+n_contributions_overall <- n_posts_overall + n_responses_overall
+n_contributors_overall <- length(unique(c(merged$post_author, merged$response_author)))
+n_posters_overall <- length(unique(merged$post_author))
+n_responders_overall <- length(unique(merged$response_author))
 
-paste0("Our dataset includes activity in the r/Teachers subreddit from ", date(date_start), 
-      " to ", date(date_end), 
-      " (", round(n_months, 2), " months).")
+
+
+paste0("In total, we collected ", n_contributions_overall,  " contributions from ", n_contributors_overall, " contributors"); paste0("dated between ", date(date_start), " and ", date(date_end), " (", round(n_months, 2), " months),"); paste0(" a total of ", n_posts_overall, " posts and ", n_responses_overall, " responses to those posts,"); paste0(" to one teaching-related subreddit: r/Teachers.")
 ```
 
 ```{r figure1, include=TRUE, echo=FALSE}
