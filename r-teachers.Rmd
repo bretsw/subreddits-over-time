@@ -1,7 +1,7 @@
 ---
 title: 'For the Longest Time: Continuity and Change in One Teaching-Related Subreddit'
 author: "K. Bret Staudt Willet & Jeffrey P. Carpenter"
-date: "11/04/2019"
+date: "11/08/2019"
 output:
   pdf_document:
     toc: yes
@@ -32,9 +32,20 @@ knitr::opts_chunk$set(echo=TRUE)
 usethis::use_git_ignore(c("*.csv", "*.rds"))
 ```
 
-3. Load subreddit posts
+3. Set timeframe
 
-```{r, include=FALSE}
+```{r timeframe, include=FALSE}
+date_start <- as_datetime("2016-01-01 05:00:00 UTC") %>% 
+        ymd_hms() %>%
+        with_tz(tzone="US/Eastern")
+date_end <- as_datetime("2019-07-1 04:59:59 UTC") %>% 
+        ymd_hms() %>%
+        with_tz(tzone="US/Eastern")
+```
+
+4. Load subreddit posts
+
+```{r posts, include=FALSE}
 posts <- read.csv("r-teaching-posts.csv", 
                             header=TRUE, 
                             colClasses='character'
@@ -57,7 +68,9 @@ posts <- read.csv("r-teaching-posts.csv",
                        str_count(post_text, "\\s+") + 2
                ) %>%
         distinct(post_id, .keep_all = TRUE) %>%
-        filter(post_id != "",
+        filter(post_date_time >= date_start,
+               post_date_time <= date_end,
+               post_id != "",
                !is.na(post_id),
                post_author != "",
                post_author != "[deleted]",
@@ -66,9 +79,9 @@ posts <- read.csv("r-teaching-posts.csv",
                )
 ```
 
-4. Load subreddit responses
+5. Load subreddit responses
 
-```{r, include=FALSE}
+```{r responses, include=FALSE}
 responses <- read.csv("r-teaching-responses.csv", 
                             header=TRUE, 
                             colClasses='character'
@@ -92,7 +105,9 @@ responses <- read.csv("r-teaching-responses.csv",
                response_word_count = str_count(response_text, "\\s+") + 1
                ) %>% 
         distinct(response_id, .keep_all = TRUE) %>%
-        filter(response_id != "",
+        filter(response_date_time >= date_start,
+               response_date_time <= date_end,
+               response_id != "",
                !is.na(response_id),
                response_author != "",
                response_author != "[deleted]",
@@ -101,10 +116,10 @@ responses <- read.csv("r-teaching-responses.csv",
                )
 ```
 
-5. Create a merged dataframe of both posts and responses.
+6. Create a merged dataframe of both posts and responses.
 
-```{r, include=FALSE}
-merged <- posts %>% inner_join(responses, by=c('post_id'))
+```{r merged, include=FALSE}
+merged <- posts %>% left_join(responses, by=c('post_id')) 
 ```
 
 # Analysis and Results
@@ -112,20 +127,15 @@ merged <- posts %>% inner_join(responses, by=c('post_id'))
 ## Figure 1. Contributions over time
 
 ```{r, include=TRUE, echo=FALSE}
-#OlsonNames()  ## returns full list of timezones
-date_start <- c(merged$post_date_time, merged$response_date_time) %>% min()
-date_end <- c(merged$post_date_time, merged$response_date_time) %>% max()
 n_months <- (date_end - date_start) %>% time_length(unit="months")
-n_posts_overall <- length(unique(posts$post_id))
+n_posts_overall <- length(unique(merged$post_id))
 n_responses_overall <- length(unique(merged$response_id))
 n_contributions_overall <- n_posts_overall + n_responses_overall
 n_contributors_overall <- length(unique(c(merged$post_author, merged$response_author)))
 n_posters_overall <- length(unique(merged$post_author))
 n_responders_overall <- length(unique(merged$response_author))
 
-
-
-paste0("In total, we collected ", n_contributions_overall,  " contributions from ", n_contributors_overall, " contributors"); paste0("dated between ", date(date_start), " and ", date(date_end), " (", round(n_months, 2), " months),"); paste0(" a total of ", n_posts_overall, " posts and ", n_responses_overall, " responses to those posts,"); paste0(" to one teaching-related subreddit: r/Teachers.")
+paste0("In total, we collected ", n_contributions_overall,  " contributions from ", n_contributors_overall, " contributors"); paste0("dated between ", date(date_start), " and ", date(date_end), " (", round(n_months, 2), " months),"); paste0("a total of ", n_posts_overall, " posts and ", n_responses_overall, " responses to those posts,"); paste0("to one teaching-related subreddit: r/Teachers.")
 ```
 
 ```{r figure1, include=TRUE, echo=FALSE}
@@ -172,12 +182,11 @@ ggplot(data = to_plot, mapping = aes(x=day, y=n, color=type)) +
         labs(color='Type of Contribution:')
 ```
 
-```{r, include=FALSE}
-## save the figure
+```{r save-figure, include=FALSE}
 #ggsave("contributions-over-time.png", width = 16, height = 9)
 ```
 
-```{r, include=FALSE}
+```{r regression-line, include=TRUE, echo=FALSE}
 ## Print the slopes of the linear regressions:
 post_fit <- to_plot %>% 
         filter(type=='post') %>% 
@@ -191,7 +200,7 @@ response_fit <- to_plot %>%
 response_slope <- response_fit$coefficients[[2]] %>% round(2)
 response_slope_pval <- summary(response_fit)$coef[2,4] %>% round(8)
 
-paste0("The slope of the `post` linear regression is ", post_slope, " (p=", post_slope_pval, "), and the slope of the `response` linear regression is ", response_slope, " (p=",response_slope_pval, ").")
+paste0("The slope of the `post` linear regression is ", post_slope, " (p=", post_slope_pval, "),"); paste0("and the slope of the `response` linear regression is ", response_slope, " (p=", response_slope_pval, ").")
 ```
 
 ## Table 1. Overall contributions in r/Teachers
@@ -270,36 +279,21 @@ knitr::kable(table2,
 
 ```{r table3, include=TRUE, echo=FALSE}
 ## posts; nonzero-response posts; percentage of posts with some responses
-n_posts <- posts %>% 
+table3 <- merged %>% 
         group_by(post_year) %>% 
-        summarize(n_posts = length(unique(post_id)))
-n_threads <- merged %>% 
-        group_by(post_year) %>% 
-        summarize(n_threads = length(unique(thread_id)))
-n_responses <- merged %>% 
-        group_by(post_year) %>% 
-        summarize(n_responses = length(unique(response_id)))
-n_nonzero <- merged %>% 
-        group_by(post_year) %>% 
-        summarize(n_nonzero = length(unique(post_id)))
-words_per_post <- merged %>% 
-        distinct(post_id, .keep_all=TRUE) %>%
-        group_by(post_year) %>%
-        summarize(words_per_post = round(mean(post_word_count), 2))
-words_per_response <- merged %>% 
-        distinct(response_id, .keep_all=TRUE) %>%
-        group_by(post_year) %>%
-        summarize(words_per_response = round(mean(response_word_count), 2))
-table3 <- n_posts %>%
-        full_join(n_threads, by="post_year") %>%
-        full_join(n_responses, by="post_year") %>%
-        full_join(n_nonzero, by="post_year") %>%
+        summarize(n_posts = length(unique(post_id)),
+                  n_threads = length(unique(thread_id)),
+                  n_responses = length(unique(response_id)),
+                  n_nonzero = n_posts - length(which(is.na(response_text))),
+                  words_per_post = round(mean(post_word_count), 2),
+                  words_per_response = round(mean(response_word_count, na.rm=TRUE), 2)
+                  ) %>%
         mutate(response_rate = round((100 * n_nonzero / n_posts), 2),
                responses_per_thread = round((n_responses / n_threads), 2)
                ) %>%
-        select(-n_nonzero) %>%
-        full_join(words_per_post, by="post_year") %>% 
-        full_join(words_per_response, by="post_year")
+        select(post_year, n_posts, n_threads, n_responses, 
+               response_rate, responses_per_thread, words_per_post, words_per_response,
+               -n_nonzero)
 knitr::kable(table3, 
              align='l',
              col.names=c("Year", "Posts", "Threads", "Responses", "Response Rate",
@@ -321,11 +315,11 @@ post_voting <- merged %>%
 response_voting <- merged %>% 
         distinct(response_id, .keep_all=TRUE) %>%
         group_by(post_year) %>%
-        summarize(mean_response_voting = round(mean(response_voting_score), 2),
-                  sd_response_voting = round(sd(response_voting_score), 2),
-                  median_response_voting= median(response_voting_score),
-                  min_response_voting = min(response_voting_score),
-                  max_response_voting = max(response_voting_score)
+        summarize(mean_response_voting = round(mean(response_voting_score, na.rm=TRUE), 2),
+                  sd_response_voting = round(sd(response_voting_score, na.rm=TRUE), 2),
+                  median_response_voting= median(response_voting_score, na.rm=TRUE),
+                  min_response_voting = min(response_voting_score, na.rm=TRUE),
+                  max_response_voting = max(response_voting_score, na.rm=TRUE)
                   )
 table4 <- post_voting %>%
         full_join(response_voting, by="post_year")
@@ -335,10 +329,7 @@ knitr::kable(table4,
                          "Mean", "SD", "Median", "Min", "Max"))
 ```
 
-
 ## Table 5. Social Interaction: Network Statistics by Year
-
-nodes, edges, transitivity, reciprocity, degree (mean, SD, median, min, max)
 
 ```{r table5, include=TRUE, echo=FALSE}
 ## retrieve the name of the parent author
