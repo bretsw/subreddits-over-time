@@ -1,7 +1,7 @@
 ---
-title: 'For the Longest Time: Continuity and Change in One Teaching-Related Subreddit'
+title: "For the Longest Time: Continuity and Change in One Teaching-Related Subreddit"
 author: "K. Bret Staudt Willet & Jeffrey P. Carpenter"
-date: "11/08/2019"
+date: "11/18/2019"
 output:
   pdf_document:
     toc: yes
@@ -46,7 +46,7 @@ date_end <- as_datetime("2019-07-1 03:59:59 UTC") %>%
 4. Load subreddit posts
 
 ```{r posts, include=FALSE}
-posts <- read.csv("r-teaching-posts.csv", 
+posts <- read.csv("data/r-teachers-posts.csv", 
                             header=TRUE, 
                             colClasses='character'
                             ) %>%
@@ -82,7 +82,7 @@ posts <- read.csv("r-teaching-posts.csv",
 5. Load subreddit responses
 
 ```{r responses, include=FALSE}
-responses <- read.csv("r-teaching-responses.csv", 
+responses <- read.csv("data/r-teachers-responses.csv", 
                             header=TRUE, 
                             colClasses='character'
                             ) %>%
@@ -449,6 +449,22 @@ knitr::kable(table5,
              align='l',
              col.names=c("Year", "Nodes", "Edges", "Transitivity", "Reciprocity",
                          "Mean", "SD", "Median", "Min", "Max"))
+```
+
+# Take sample of posts for qualitative content analysis
+
+```{r sample, include=FALSE}
+sample_year <- 2016
+sample_size <- 100
+
+set.seed(11182019)
+sample_ids <- posts %>% 
+        filter(post_year==sample_year) %>% 
+        pull(post_id) %>% 
+        sample(size=sample_size)
+
+posts_sample <- posts %>% filter(post_id %in% sample_ids)
+#posts_sample %>% write.csv("data/r-teachers-posts-sample.csv", row.names=FALSE)
 ```
 
 # Version/dependencies

@@ -5,9 +5,11 @@ Study of the r/Teachers subreddit over time - https://www.reddit.com/r/Teachers/
 
 ## Data Collection
 
-1. Go to: https://console.cloud.google.com/bigquery/
+0. First, check to see the range of dates available for Reddit posts: https://bigquery.cloud.google.com/dataset/fh-bigquery:reddit_posts
 
 **Collect subreddit posts:**
+
+1. Go to: https://console.cloud.google.com/bigquery/
 
 2. To collect all posts, in the `Query Editor`, paste in this script:
 
