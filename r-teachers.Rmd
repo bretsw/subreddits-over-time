@@ -177,7 +177,7 @@ to_plot <- full_join(to_plot_posts, to_plot_responses, by = c("day", "type", "n"
 
 ggplot(data = to_plot, mapping = aes(x=day, y=n, color=type)) +
         geom_point(size = 1.5, alpha=.9) + 
-        geom_smooth(method=lm, se=FALSE, size=2) +
+        geom_smooth(method='auto', se=FALSE, size=2) +
         scale_y_continuous(trans='log10') +
         xlab(NULL) +
         ylab("Number of Contributions") +
@@ -195,7 +195,7 @@ ggplot(data = to_plot, mapping = aes(x=day, y=n, color=type)) +
 ```
 
 ```{r save-figure, include=FALSE}
-#ggsave("contributions-over-time.png", width = 16, height = 9)
+#ggsave("contributions-over-time-r-teachers.png", width = 16, height = 9)
 ```
 
 ```{r regression-line, include=TRUE, echo=FALSE}
