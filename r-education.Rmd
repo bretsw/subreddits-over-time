@@ -46,7 +46,7 @@ date_end <- as_datetime("2019-07-1 03:59:59 UTC") %>%
 4. Load subreddit posts
 
 ```{r posts, include=FALSE}
-posts <- read.csv("data/r-teachers-posts.csv", 
+posts <- read.csv("data/r-education-posts.csv", 
                             header=TRUE, 
                             colClasses='character'
                             ) %>%
@@ -82,7 +82,7 @@ posts <- read.csv("data/r-teachers-posts.csv",
 5. Load subreddit responses
 
 ```{r responses, include=FALSE}
-responses <- read.csv("data/r-teachers-responses.csv", 
+responses <- read.csv("data/r-education-responses.csv", 
                             header=TRUE, 
                             colClasses='character'
                             ) %>%
