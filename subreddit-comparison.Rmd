@@ -834,8 +834,7 @@ ggplot(data = plot_self_responses,
               legend.box.background = element_rect(),
               legend.title=element_text(size=28, family='serif'), 
               legend.text=element_text(size=24, family='serif')
-              ) +
-        labs(color='Subreddit:')
+              )
 ```
 
 ```{r, include=FALSE}
@@ -970,7 +969,7 @@ ggplot(data = plot_reciprocity,
 
 ## Figure 9. Degree of Connectedness in r/Teachers and r/education over Time
 
-```{r degree, include=FALSE}
+```{r degree, include=TRUE, echo=FALSE}
 degrees_teachers_list <- lapply(network_graph_teachers, function(x) {vertex_attr(x, name='degree')})
 names(degrees_teachers_list) <- date_bin
 degrees_teachers_df <- map_df(degrees_teachers_list, ~ as.data.frame(.x), .id='date_bin') %>%
@@ -1023,8 +1022,7 @@ ggplot(data = plot_degree,
               legend.box.background = element_rect(),
               legend.title=element_text(size=28, family='serif'), 
               legend.text=element_text(size=24, family='serif')
-              ) +
-        labs(color='Subreddit:')
+              )
 ```
 
 ```{r, include=FALSE}
@@ -1033,22 +1031,41 @@ ggplot(data = plot_degree,
 
 # Sample posts for qualitative content analysis
 
-Finally, we took a purposeful sample of the Top-10 posts with most responses (or highest voting score) x 7 semesters x 2 subreddits (140 posts + all responses)
+Finally, we took a purposeful sample of the Top-10 posts with most responses (or highest voting score) x 7 semesters x 2 subreddits, then up to the Top-10 responses to each (140 posts + up to 1400 responses).
 
 ```{r sample, include=FALSE}
+top_posts_teachers <- merged_teachers %>%
+        distinct(post_id, .keep_all=TRUE) %>%
+        group_by(post_semester) %>%
+        top_n(n=10, wt=post_voting_score) %>%
+        pull(post_id)
 sample_teachers <- merged_teachers %>%
-        distinct(post_id, .keep_all=TRUE) %>%
-        group_by(post_semester) %>%
-        top_n(n=10, wt=post_voting_score)
-sample_education <- merged_education %>%
-        distinct(post_id, .keep_all=TRUE) %>%
-        group_by(post_semester) %>%
-        top_n(n=10, wt=post_voting_score)
-sample_unshuffled <- sample_teachers %>% rbind(sample_education)
-sample_shuffled <- sample_unshuffled[sample(1:nrow(sample_unshuffled)), ]
-#sum(as.numeric(sample_shuffled$num_comments))
+        filter(post_id %in% top_posts_teachers) %>%
+        group_by(post_id) %>%
+        top_n(n=10, wt=response_voting_score) %>%
+        select(subreddit.x, post_id, post_date_time, post_voting_score, post_author, title, post_text, 
+              response_id, response_date_time, response_voting_score, response_author, response_text,
+              n_self_responses, p_self_responses, self_response)
+#sample_teachers %>% write.csv("sample_teachers.csv", row.names=FALSE)
 
-#sample_shuffled %>% write.csv("sample_shuffled.csv", row.names=FALSE)
+top_posts_education <- merged_education %>%
+        distinct(post_id, .keep_all=TRUE) %>%
+        group_by(post_semester) %>%
+        top_n(n=10, wt=post_voting_score) %>%
+        pull(post_id)
+sample_education <- merged_education %>%
+        filter(post_id %in% top_posts_education) %>%
+        group_by(post_id) %>%
+        top_n(n=10, wt=response_voting_score) %>%
+        select(subreddit.x, post_id, post_date_time, post_voting_score, post_author, title, post_text, 
+              response_id, response_date_time, response_voting_score, response_author, response_text,
+              n_self_responses, p_self_responses, self_response)
+#sample_education %>% write.csv("sample_education.csv", row.names=FALSE)
+
+
+#sample_unshuffled <- sample_teachers %>% rbind(sample_education)
+#set.seed(1152020)
+#sample_shuffled <- sample_unshuffled[sample(1:nrow(sample_unshuffled)), ]
 
 #set.seed(1132020)
 #random_sample_teachers <- merged_teachers %>%
