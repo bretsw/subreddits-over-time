@@ -1,7 +1,10 @@
-# r-teachers
-Study of the r/Teachers subreddit over time - https://www.reddit.com/r/Teachers/
+# subreddit-comparison
 
+Study of the r/Teachers and r/education subreddits over time
 
+https://www.reddit.com/r/Teachers/
+
+https://www.reddit.com/r/education/
 
 ## Data Collection
 

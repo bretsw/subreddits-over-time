@@ -30,7 +30,7 @@ library(ggraph)  # for visualizing the social network
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=TRUE)
-usethis::use_git_ignore(c("*.csv", "*.rds"))
+usethis::use_git_ignore(c("*.csv", "*.rds", ".log"))
 ```
 
 3. Set timeframe
@@ -1045,8 +1045,23 @@ sample_teachers <- merged_teachers %>%
         top_n(n=10, wt=response_voting_score) %>%
         select(subreddit.x, post_id, post_date_time, post_voting_score, post_author, title, post_text, 
               response_id, response_date_time, response_voting_score, response_author, response_text,
-              n_self_responses, p_self_responses, self_response)
+              n_self_responses, p_self_responses, self_response, url, permalink)
 #sample_teachers %>% write.csv("sample_teachers.csv", row.names=FALSE)
+
+
+
+#sample_teachers %>% count(post_id) %>% View()
+#sample_teachers %>% filter(post_id == "4osxxt") %>% View()
+#merged_teachers %>% filter(post_id == "4osxxt") %>% View()
+        
+#tmp <- read.csv("tmp.csv", header=TRUE, colClasses='character') 
+#which(sample_teachers$post_id %in% tmp$X.1) %>% length
+#tmp %>% count(X.1)
+
+#sample_education %>% count(post_id) %>% View()
+#sample_education %>% filter(post_id == "7kv0as") %>% View()
+#merged_education %>% filter(post_id == "7kv0as") %>% View()
+
 
 top_posts_education <- merged_education %>%
         distinct(post_id, .keep_all=TRUE) %>%
@@ -1059,10 +1074,11 @@ sample_education <- merged_education %>%
         top_n(n=10, wt=response_voting_score) %>%
         select(subreddit.x, post_id, post_date_time, post_voting_score, post_author, title, post_text, 
               response_id, response_date_time, response_voting_score, response_author, response_text,
-              n_self_responses, p_self_responses, self_response)
+              n_self_responses, p_self_responses, self_response, url, permalink)
 #sample_education %>% write.csv("sample_education.csv", row.names=FALSE)
 
 
+#########################################
 #sample_unshuffled <- sample_teachers %>% rbind(sample_education)
 #set.seed(1152020)
 #sample_shuffled <- sample_unshuffled[sample(1:nrow(sample_unshuffled)), ]
