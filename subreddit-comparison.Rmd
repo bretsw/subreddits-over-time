@@ -697,7 +697,7 @@ ggplot(data = tidy_table4,
         geom_line(size = 2) +
         scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
         xlab(NULL) +
-        ylab("Proportion of Subreddit Threads Receiving a Response") +
+        ylab("Percentage of Subreddit Threads Receiving a Response") +
         ylim(0, 100) +
         theme_bw() +
         theme(panel.grid.major = element_line(color = "gray30"),
@@ -769,7 +769,7 @@ ggplot(data = tidy_table5,
 #ggsave("output/thread-length.png", width = 16, height = 9)
 ```
 
-## Figure 6. Proportion of Self-replies per Thread in r/Teachers and r/education over Time
+## Figure 6. Percentage of Self-replies per Thread in r/Teachers and r/education over Time
 
 ```{r, include=TRUE, echo=FALSE}
 self_responses_teachers <- merged_teachers %>% 
@@ -823,7 +823,7 @@ ggplot(data = plot_self_responses,
         scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
         scale_shape_manual(values = c(2, 1)) +
         xlab(NULL) +
-        ylab("Proportion of Self-replies per Thread") +
+        ylab("Percentage of Self-replies per Thread") +
         ylim(0, 100) + 
         theme_bw() +
         theme(panel.grid.major = element_line(color = "gray30"),
