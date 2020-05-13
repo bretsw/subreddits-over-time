@@ -1,10 +1,6 @@
-# subreddit-comparison
+# Continuity and Change in Teaching-Related Subreddits
 
-Study of the r/Teachers and r/education subreddits over time
-
-https://www.reddit.com/r/Teachers/
-
-https://www.reddit.com/r/education/
+A study of the [r/Teachers](https://www.reddit.com/r/Teachers/) and [r/education](https://www.reddit.com/r/education/) subreddits over time.
 
 ## Data Collection
 
