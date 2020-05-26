@@ -17,13 +17,12 @@ This section loads the data and packages and starts to process the data, but doe
 1. Load packages
 
 ```{r, include=FALSE}
+library(tidyverse)
+library(anytime)
+library(lubridate)
 library(knitr)
 library(kableExtra)
-library(tidyverse)  # for data manipulation
-library(anytime)
-library(lubridate)  # for working with dates
-library(igraph)  # for processing the social network
-library(ggraph)  # for visualizing the social network
+library(igraph)
 ```
 
 2. Set up settings for sharing 
@@ -36,22 +35,39 @@ usethis::use_git_ignore(c("*.csv", "*.rds", ".log"))
 3. Set timeframe
 
 ```{r timeframe, include=FALSE}
-date_start <- as_datetime("2016-01-01 05:00:00 UTC") %>% 
+date_start <- 
+        as_datetime("2016-01-01 05:00:00 UTC") %>% 
         ymd_hms() %>%
         with_tz(tzone="US/Eastern")
-date_end <- as_datetime("2019-07-01 03:59:59 UTC") %>% 
+date_end <- 
+        as_datetime("2019-07-01 03:59:59 UTC") %>% 
         ymd_hms() %>%
         with_tz(tzone="US/Eastern")
 ```
 
-4. Load subreddit posts
+4. Load posts
 
-```{r posts, include=FALSE}
-posts_teachers <- read.csv("data/r-teachers-posts.csv", 
-                            header=TRUE, 
-                            colClasses='character'
-                            ) %>%
-        as.data.frame() %>%
+```{r posts-load, include=FALSE}
+posts_teachers0 <- 
+        read.csv("data/r-teachers-posts.csv", 
+                 header=TRUE, 
+                 colClasses='character'
+                 ) %>%
+        as_tibble()
+
+posts_education0 <- 
+        read.csv("data/r-education-posts.csv", 
+                 header=TRUE, 
+                 colClasses='character'
+                 ) %>%
+        as_tibble()
+```
+
+5. Process posts
+
+```{r posts-process, include=FALSE}
+posts_teachers <- 
+        posts_teachers0 %>%
         rename(post_id = id, 
                post_author = author,
                post_voting_score = score,
@@ -79,12 +95,10 @@ posts_teachers <- read.csv("data/r-teachers-posts.csv",
                post_text != "[deleted]",
                post_text != "[removed]"
                )
+rm(posts_teachers0)
 
-posts_education <- read.csv("data/r-education-posts.csv", 
-                            header=TRUE, 
-                            colClasses='character'
-                            ) %>%
-        as.data.frame() %>%
+posts_education <-
+        posts_education0 %>%
         rename(post_id = id, 
                post_author = author,
                post_voting_score = score,
@@ -112,16 +126,32 @@ posts_education <- read.csv("data/r-education-posts.csv",
                post_text != "[deleted]",
                post_text != "[removed]"
                )
+rm(posts_education0)
 ```
 
-5. Load subreddit responses
+6. Load responses
 
-```{r responses, include=FALSE}
-responses_teachers <- read.csv("data/r-teachers-responses.csv", 
-                            header=TRUE, 
-                            colClasses='character'
-                            ) %>%
-        as.data.frame() %>% 
+```{r responses-load, include=FALSE}
+responses_teachers0 <- 
+        read.csv("data/r-teachers-responses.csv", 
+                 header=TRUE, 
+                 colClasses='character'
+                 ) %>%
+        as_tibble()
+
+responses_education0 <- 
+        read.csv("data/r-education-responses.csv", 
+                 header=TRUE, 
+                 colClasses='character'
+                 ) %>%
+        as_tibble()
+```
+
+7. Process subreddit responses
+
+```{r responses-process, include=FALSE}
+responses_teachers <- 
+        responses_teachers0 %>%
         rename(response_id = id, 
                response_author = author,
                response_voting_score = score,
@@ -150,12 +180,10 @@ responses_teachers <- read.csv("data/r-teachers-responses.csv",
                response_text != "[deleted]",
                response_text != "[removed]"
                )
+rm(responses_teachers0)
 
-responses_education <- read.csv("data/r-education-responses.csv", 
-                            header=TRUE, 
-                            colClasses='character'
-                            ) %>%
-        as.data.frame() %>% 
+responses_education <-
+        responses_education0 %>%
         rename(response_id = id, 
                response_author = author,
                response_voting_score = score,
@@ -184,12 +212,14 @@ responses_education <- read.csv("data/r-education-responses.csv",
                response_text != "[deleted]",
                response_text != "[removed]"
                )
+rm(responses_education0)
 ```
 
-6. Create a merged dataframe of posts and responses for both subreddits.
+8. Create a merged dataframe of posts and responses for both subreddits.
 
 ```{r merged, include=FALSE}
-merged_teachers <- posts_teachers %>% 
+merged_teachers <- 
+        posts_teachers %>% 
         left_join(responses_teachers, by=c('post_id')) %>%
         mutate(self_response = ifelse(is.na(response_author), 
                                       FALSE,
@@ -206,7 +236,8 @@ merged_teachers <- posts_teachers %>%
                ) %>%
         ungroup()
 
-merged_education <- posts_education %>% 
+merged_education <- 
+        posts_education %>% 
         left_join(responses_education, by=c('post_id')) %>%
         mutate(self_response = ifelse(is.na(response_author), 
                                       FALSE,
@@ -226,104 +257,129 @@ merged_education <- posts_education %>%
 
 # Analysis and Results
 
-## Figure 1. Contributions to r/Teachers and r/education each day from January 1, 2016 through June 30, 2019
+## Figure 1. Daily contributions to r/Teachers and r/education
 
-```{r, include=TRUE, echo=FALSE}
-n_months <- (date_end - date_start) %>% time_length(unit="months")
-
-n_posts_overall_teachers <- length(unique(merged_teachers$post_id))
-n_posts_overall_education <- length(unique(merged_education$post_id))
-
-n_responses_overall_teachers <- merged_teachers %>%
+```{r, include=FALSE, echo=FALSE}
+n_months <- 
+        (date_end - date_start) %>% 
+        time_length(unit="months")
+n_posts_overall_teachers <- 
+        merged_teachers %>%
+        pull(post_id) %>%
+        unique() %>%
+        length()
+n_posts_overall_education <- 
+        merged_education %>%
+        pull(post_id) %>%
+        unique() %>%
+        length()
+n_responses_overall_teachers <- 
+        merged_teachers %>%
         filter(., !is.na(response_id)) %>%
         pull(response_id) %>%
         unique() %>%
         length()
-n_responses_overall_education <- merged_education %>%
+n_responses_overall_education <-
+        merged_education %>%
         filter(., !is.na(response_id)) %>%
         pull(response_id) %>%
         unique() %>%
         length()
+n_contributions_overall_teachers <- 
+        n_posts_overall_teachers + n_responses_overall_teachers
+n_contributions_overall_education <- 
+        n_posts_overall_education + n_responses_overall_education
 
-n_contributions_overall_teachers <- n_posts_overall_teachers +
-        n_responses_overall_teachers
-n_contributions_overall_education <- n_posts_overall_education +
-        n_responses_overall_education
-
-n_posters_overall_teachers <- length(unique(merged_teachers$post_author))
-n_posters_overall_education <- length(unique(merged_education$post_author))
-
-n_responders_overall_teachers <- merged_teachers %>%
+n_posters_overall_teachers <- 
+        merged_teachers %>%
+        pull(post_author) %>%
+        unique() %>%
+        length()
+n_posters_overall_education <- 
+        merged_education %>%
+        pull(post_author) %>%
+        unique() %>%
+        length()
+n_responders_overall_teachers <- 
+        merged_teachers %>%
         filter(., !is.na(response_author)) %>%
         pull(response_author) %>%
         unique() %>%
         length()
-n_responders_overall_education <- merged_education %>%
+n_responders_overall_education <-
+        merged_education %>%
         filter(., !is.na(response_author)) %>%
         pull(response_author) %>%
         unique() %>%
         length()
-
-n_contributors_overall_teachers <- merged_teachers %>%
+n_contributors_overall_teachers <- 
+        merged_teachers %>%
         c(pull(., post_author), pull(., response_author)) %>%
         unique() %>%
-        length() -1  ## to account for the NA response_author
-n_contributors_overall_education <- merged_education %>%
+        length() -1  # this accounts for the NA response_author
+n_contributors_overall_education <- 
+        merged_education %>%
         c(pull(., post_author), pull(., response_author)) %>%
         unique() %>%
-        length() -1  ## to account for the NA response_author
+        length() -1  # this accounts for the NA response_author
 
-
-paste0("From the r/Teachers subreddit, we collected ", n_contributions_overall_teachers,  " contributions from ", n_contributors_overall_teachers, " contributors"); paste0("dated between ", date(date_start), " and ", date(date_end), " (", round(n_months, 2), " months),"); paste0("a total of ", n_posts_overall_teachers, " posts and ", n_responses_overall_teachers, " responses to those posts."); paste0("From the r/education subreddit during the same time period, we collected ", n_contributions_overall_education,  " contributions from ", n_contributors_overall_education, " contributors"); paste0("a total of ", n_posts_overall_education, " posts and ", n_responses_overall_education, " responses to those posts.")
+#paste0("From the r/Teachers subreddit, we collected ", n_contributions_overall_teachers,  " contributions from ", n_contributors_overall_teachers, " contributors"); paste0("dated between ", date(date_start), " and ", date(date_end), " (", round(n_months, 2), " months),"); paste0("a total of ", n_posts_overall_teachers, " posts and ", n_responses_overall_teachers, " responses to those posts."); paste0("From the r/education subreddit during the same time period, we collected ", n_contributions_overall_education,  " contributions from ", n_contributors_overall_education, " contributors"); paste0("a total of ", n_posts_overall_education, " posts and ", n_responses_overall_education, " responses to those posts.")
 ```
 
-```{r contributions-over-time-comparison, include=TRUE, echo=FALSE}
-to_plot_posts_teachers <- posts_teachers$post_date_time %>% 
+From the **r/Teachers** subreddit, we collected `r n_contributions_overall_teachers` contributions from `r n_contributors_overall_teachers` contributors dated between `r date(date_start) ` and `r date(date_end)` ( `r round(n_months, 2)` months), a total of `r n_posts_overall_teachers` posts and `r n_responses_overall_teachers` responses to those posts. 
+
+From the **r/education subreddit** during the same time period, we collected `r n_contributions_overall_education` contributions from `r n_contributors_overall_education` contributors, a total of `r n_posts_overall_education` posts and `r n_responses_overall_education` responses to those posts.
+
+In total, `r n_contributions_overall_teachers + n_contributions_overall_education` contributions to these two subreddits comprised our dataset.
+
+```{r contributions-over-time-comparison, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+to_plot_posts_teachers <-
+        posts_teachers$post_date_time %>% 
         floor_date("day") %>% 
         as_date() %>%
         table() %>% 
-        as.data.frame() %>%
-        rename(day = ".",
-               n = Freq) %>%
+        as_tibble() %>%
+        rename(day = ".") %>%
         mutate(day = as_date(day),
                type = "post",
-               subreddit = "teachers") %>%
+               subreddit = "r/Teachers") %>%
         filter((day >= date_start) & (day <= date_end))
-to_plot_responses_teachers <- responses_teachers$response_date_time %>% 
+to_plot_responses_teachers <- 
+        responses_teachers$response_date_time %>% 
         floor_date("day") %>% 
         as_date() %>%
         table() %>% 
-        as.data.frame() %>%
-        rename(day = ".",
-               n = Freq) %>%
+        as_tibble() %>%
+        rename(day = ".") %>%
         mutate(day = as_date(day),
                type = "response",
-               subreddit = "teachers") %>%
+               subreddit = "r/Teachers") %>%
         filter((day >= date_start) & (day <= date_end))
-to_plot_posts_education <- posts_education$post_date_time %>% 
+to_plot_posts_education <- 
+        posts_education$post_date_time %>% 
         floor_date("day") %>% 
         as_date() %>%
         table() %>% 
-        as.data.frame() %>%
-        rename(day = ".",
-               n = Freq) %>%
+        as_tibble() %>%
+        rename(day = ".") %>%
         mutate(day = as_date(day),
                type = "post",
-               subreddit = "education") %>%
+               subreddit = "r/education") %>%
         filter((day >= date_start) & (day <= date_end))
-to_plot_responses_education <- responses_education$response_date_time %>% 
+to_plot_responses_education <- 
+        responses_education$response_date_time %>% 
         floor_date("day") %>% 
         as_date() %>%
         table() %>% 
-        as.data.frame() %>%
-        rename(day = ".",
-               n = Freq) %>%
+        as_tibble() %>%
+        rename(day = ".") %>%
         mutate(day = as_date(day),
                type = "response",
-               subreddit = "education") %>%
+               subreddit = "r/education") %>%
         filter((day >= date_start) & (day <= date_end))
 
-to_plot <- to_plot_posts_teachers %>% 
+to_plot <- 
+        to_plot_posts_teachers %>% 
         full_join(to_plot_responses_teachers, by = c("subreddit", "day", "type", "n")) %>%
         full_join(to_plot_posts_education, by = c("subreddit", "day", "type", "n")) %>%
         full_join(to_plot_responses_education, by = c("subreddit", "day", "type", "n")) %>%
@@ -354,43 +410,67 @@ ggplot(data = to_plot, mapping = aes(x=day, y=n, color=subreddit, shape=type)) +
 ```
 
 ```{r, include=FALSE}
-#ggsave("output/contributions-over-time-comparison.png", width = 16, height = 9)
+ggsave("output/fig1-contributions-over-time.png", width = 16, height = 9)
 ```
 
-```{r regression-line, include=TRUE, echo=FALSE}
-## Print the slopes of the linear regressions:
-post_fit_teachers <- to_plot %>% 
-        filter(type=='post', subreddit=='teachers') %>% 
-        lm(n ~ day, data = .)
-post_slope_teachers <- post_fit_teachers$coefficients[[2]] %>% round(2)
-post_slope_pval_teachers <- summary(post_fit_teachers)$coef[2,4] %>% round(8)
+In addition to this visualization, it is helpful to print the slopes of the linear regressions.
 
-response_fit_teachers <- to_plot %>% 
-        filter(type=='response', subreddit=='teachers') %>% 
+```{r regression-lines, include=FALSE, echo=FALSE}
+post_fit_teachers <- 
+        to_plot %>% 
+        filter(type=='post', subreddit=='r/Teachers') %>% 
         lm(n ~ day, data = .)
-response_slope_teachers <- response_fit_teachers$coefficients[[2]] %>% round(2)
-response_slope_pval_teachers <- summary(response_fit_teachers)$coef[2,4] %>% round(8)
-
-post_fit_education <- to_plot %>% 
-        filter(type=='post', subreddit=='education') %>% 
+post_slope_teachers <- 
+        post_fit_teachers$coefficients[[2]] %>% 
+        round(2)
+post_slope_pval_teachers <- 
+        summary(post_fit_teachers)$coef[2,4] %>% 
+        round(8)
+response_fit_teachers <- 
+        to_plot %>% 
+        filter(type=='response', subreddit=='r/Teachers') %>% 
         lm(n ~ day, data = .)
-post_slope_education <- post_fit_education$coefficients[[2]] %>% round(2)
-post_slope_pval_education <- summary(post_fit_education)$coef[2,4] %>% round(8)
+response_slope_teachers <- 
+        response_fit_teachers$coefficients[[2]] %>% 
+        round(2)
+response_slope_pval_teachers <- 
+        summary(response_fit_teachers)$coef[2,4] %>% 
+        round(8)
 
-response_fit_education <- to_plot %>% 
-        filter(type=='response', subreddit=='education') %>% 
+post_fit_education <- 
+        to_plot %>% 
+        filter(type=='post', subreddit=='r/education') %>% 
         lm(n ~ day, data = .)
-response_slope_education <- response_fit_education$coefficients[[2]] %>% round(2)
-response_slope_pval_education <- summary(response_fit_education)$coef[2,4] %>% round(8)
+post_slope_education <- 
+        post_fit_education$coefficients[[2]] %>% 
+        round(2)
+post_slope_pval_education <- 
+        summary(post_fit_education)$coef[2,4] %>% 
+        round(8)
+response_fit_education <- 
+        to_plot %>% 
+        filter(type=='response', subreddit=='r/education') %>% 
+        lm(n ~ day, data = .)
+response_slope_education <- 
+        response_fit_education$coefficients[[2]] %>% 
+        round(2)
+response_slope_pval_education <- 
+        summary(response_fit_education)$coef[2,4] %>% 
+        round(8)
 
-paste0("For the r/Teachers subreddit, the slope of the `post` linear regression is ", post_slope_teachers, " (p=", post_slope_pval_teachers, "),"); paste0("and the slope of the `response` linear regression is ", response_slope_teachers, " (p=", response_slope_pval_teachers, ")."); paste0("For the r/education subreddit, the slope of the `post` linear regression is ", post_slope_education, " (p=", post_slope_pval_education, "),"); paste0("and the slope of the `response` linear regression is ", response_slope_education, " (p=", response_slope_pval_education, ")."); 
+#paste0("For the r/Teachers subreddit, the slope of the `post` linear regression is ", post_slope_teachers, " (p=", post_slope_pval_teachers, "),"); paste0("and the slope of the `response` linear regression is ", response_slope_teachers, " (p=", response_slope_pval_teachers, ")."); paste0("For the r/education subreddit, the slope of the `post` linear regression is ", post_slope_education, " (p=", post_slope_pval_education, "),"); paste0("and the slope of the `response` linear regression is ", response_slope_education, " (p=", response_slope_pval_education, ").")
 ```
 
-## Figure 2. Contributors to r/Teachers and r/education over Time
+For the **r/Teachers** subreddit, the slope of the *post* linear regression is `r post_slope_teachers` (*p* = `r post_slope_pval_teachers`) and the slope of the *response* linear regression is `r response_slope_teachers` (*p* = `r response_slope_pval_teachers`). 
+
+For the **r/education** subreddit, the slope of the *post* linear regression is `r post_slope_education` (*p* = `r post_slope_pval_education`), and the slope of the *response* linear regression is `r response_slope_education` (*p* = `r response_slope_pval_education`).
+
+## Figure 2. Contributors to r/Teachers and r/education
 
 ```{r table1, include=TRUE, echo=FALSE}
 ## have to subtract 1 to account for NA rows for n_responders and n_contributors
-table1_teachers <- merged_teachers %>%
+table1_teachers <- 
+        merged_teachers %>%
         group_by(post_semester) %>% 
         summarize(n_posters_teachers = length(unique(post_author)),
                   n_responders_teachers = length(unique(response_author)) - 1, 
@@ -398,7 +478,8 @@ table1_teachers <- merged_teachers %>%
                                                             response_author))) - 1
                   ) %>%
         rename(semester=post_semester)
-table1_education <- merged_education %>%
+table1_education <- 
+        merged_education %>%
         group_by(post_semester) %>% 
         summarize(n_posters_education = length(unique(post_author)),
                   n_responders_education = length(unique(response_author)) - 1, 
@@ -406,12 +487,16 @@ table1_education <- merged_education %>%
                                                             response_author))) - 1
                   ) %>%
         rename(semester=post_semester)
-table1 <- table1_teachers %>% full_join(table1_education, by='semester') %>%
+table1 <- 
+        table1_teachers %>% 
+        full_join(table1_education, by='semester') %>%
         select(semester, 
                n_contributors_teachers, n_contributors_education,
                n_posters_teachers, n_posters_education,
-               n_responders_teachers, n_responders_education)
-table1_kable <- table1 %>% 
+               n_responders_teachers, n_responders_education
+               )
+table1_kable <- 
+        table1 %>% 
         knitr::kable(align='c',
                      col.names=c("Year", 
                                  "r/Teachers", "r/edcuation",
@@ -420,13 +505,19 @@ table1_kable <- table1 %>%
                      ) %>% 
         kable_styling(c("striped", "bordered")) %>%
         add_header_above(c(" " = 1, "Contributors" = 2, "Posters" = 2, "Responders" = 2))
-#save_kable(table1_kable, "output/table1.png")  # requires webshot::install_phantomjs()
 table1_kable
 ```
 
-```{r individual-contributions, include=TRUE, echo=FALSE}
-tidy_table1 <- table1 %>% 
-        pivot_longer(cols = -semester, 
+```{r, include=FALSE}
+# requires webshot::install_phantomjs()
+save_kable(table1_kable, "output/table1.png")
+```
+
+```{r table1-to-plot, include=FALSE}
+table1_to_plot <- 
+        table1 %>% 
+        select(-n_contributors_teachers, -n_contributors_education) %>%
+        pivot_longer(cols = -semester,
                      names_to = c("type", "subreddit"),
                      names_pattern = "n_(.*)_(.*)",
                      values_to = "count"
@@ -444,18 +535,28 @@ tidy_table1 <- table1 %>%
                                                )
                                         )
                                  )
+               ) %>%
+        select(-semester) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
                )
+```
 
-ggplot(data = tidy_table1, 
-       mapping = aes(x=date_bin, y=count, 
+```{r contributors-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = table1_to_plot, 
+       mapping = aes(x=date_bin, 
+                     y=count, 
                      color=subreddit,
-                     group=interaction(type, subreddit)
+                     group=interaction(type, subreddit),
+                     shape=type
                      )
-       ) +
-        geom_point(size = 12, alpha = .8, aes(shape=type)) +
+       ) + 
+        geom_point(size = 12, alpha = .8) +
         geom_line(size = 2) +
         scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
-        scale_shape_manual(values = c(19, 17, 15)) +
+        scale_shape_manual(values = c(17, 19)) +
         xlab(NULL) +
         ylab("Number of Contributors") +
         ylim(0, 20000) +
@@ -470,30 +571,33 @@ ggplot(data = tidy_table1,
               legend.title=element_text(size=28, family='serif'), 
               legend.text=element_text(size=24, family='serif')
               ) +
-        labs(color='Subreddit:', shape='Type of Contribution:')
+        labs(color='Subreddit:', shape='Type of Contributor:')
 ```
 
 ```{r, include=FALSE}
-#ggsave("output/individual-contributions.png", width = 16, height = 9)
+ggsave("output/fig2-contributors.png", width = 16, height = 9)
 ```
 
-## Figure 3. Degree of Contribution to r/Teachers and r/education over Time
+## Degree of Contribution to r/Teachers and r/education
 
-```{r, include=TRUE, echo=FALSE}
-n_multiple_posts_teachers <- merged_teachers %>% 
+```{r, include=TRUE, echo=FALSE, message=FALSE}
+n_multiple_posts_teachers <- 
+        merged_teachers %>% 
         group_by(post_semester) %>% 
         count(post_author) %>%
         filter(n > 1) %>% 
         summarize(multiple_posts_teachers = length(n)) %>%
         rename(semester = post_semester)
-n_multiple_responses_teachers <- merged_teachers %>% 
+n_multiple_responses_teachers <- 
+        merged_teachers %>% 
         filter(., !is.na(response_author)) %>%
         group_by(post_semester) %>% 
         count(response_author) %>%
         filter(n > 1) %>% 
         summarize(multiple_responses_teachers = length(n)) %>%
         rename(semester = post_semester)
-n_self_response_teachers <- merged_teachers %>% 
+n_self_response_teachers <- 
+        merged_teachers %>% 
         filter(., !is.na(response_author)) %>%
         mutate(self_response_numeric = ifelse(self_response, 1, 0)) %>%
         group_by(post_author, post_semester) %>%
@@ -502,20 +606,23 @@ n_self_response_teachers <- merged_teachers %>%
         group_by(post_semester) %>%
         summarize(n_with_some_self_responses_teachers = length(self_responses_by_poster)) %>%
         rename(semester = post_semester)
-n_multiple_posts_education <- merged_education %>% 
+n_multiple_posts_education <- 
+        merged_education %>% 
         group_by(post_semester) %>% 
         count(post_author) %>%
         filter(n > 1) %>% 
         summarize(multiple_posts_education = length(n)) %>%
         rename(semester = post_semester)
-n_multiple_responses_education <- merged_education %>% 
+n_multiple_responses_education <- 
+        merged_education %>% 
         filter(., !is.na(response_author)) %>%
         group_by(post_semester) %>% 
         count(response_author) %>%
         filter(n > 1) %>% 
         summarize(multiple_responses_education = length(n)) %>%
         rename(semester = post_semester)
-n_self_response_education <- merged_education %>% 
+n_self_response_education <- 
+        merged_education %>% 
         filter(., !is.na(response_author)) %>%
         mutate(self_response_numeric = ifelse(self_response, 1, 0)) %>%
         group_by(post_author, post_semester) %>%
@@ -558,14 +665,18 @@ table2_kable <- table2 %>%
                                  "r/Teachers", "r/edcuation")
                      ) %>% 
         kable_styling(c("striped", "bordered")) %>%
-        add_header_above(c(" " = 1, "Multiple Posts Proportion" = 2, 
-                           "Multiple Responses Proportion" = 2, "Self-Responses Proportion" = 2))
-#save_kable(table2_kable, "output/table2.png")  # requires webshot::install_phantomjs()
+        add_header_above(c(" " = 1, "Multiple Posts Percentage" = 2, 
+                           "Multiple Responses Percentage" = 2, "Self-Responses Percentage" = 2))
 table2_kable
 ```
 
-```{r degree-of-contribution, include=TRUE, echo=FALSE}
-tidy_table2 <- table2 %>% 
+```{r, include=FALSE}
+save_kable(table2_kable, "output/table2.png")
+```
+
+```{r table2-to-plot, include=FALSE}
+table2_to_plot <- 
+        table2 %>% 
         pivot_longer(cols = -semester, 
                      names_to = c("type", "subreddit"),
                      names_pattern = "p_(.*)_(.*)",
@@ -584,8 +695,16 @@ tidy_table2 <- table2 %>%
                                                )
                                         )
                                  )
-               )
-ggplot(data = tidy_table2, 
+               ) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
+        )
+```
+
+```{r degree-of-contribution-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = table2_to_plot, 
        mapping = aes(x=date_bin, y=proportion, 
                      color=subreddit,
                      group=interaction(type, subreddit)
@@ -596,7 +715,7 @@ ggplot(data = tidy_table2,
         scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
         scale_shape_manual(values = c(19, 17, 15)) +
         xlab(NULL) +
-        ylab("Proportion of Contributors") +
+        ylab("Percentage of Contributors") +
         ylim(0, 100) +
         theme_bw() +
         theme(panel.grid.major = element_line(color = "gray30"),
@@ -613,14 +732,15 @@ ggplot(data = tidy_table2,
 ```
 
 ```{r, include=FALSE}
-#ggsave("output/degree-of-contribution.png", width = 16, height = 9)
+ggsave("output/degree-of-contribution.png", width = 16, height = 9)
 ```
 
-## Figure 4. Response Rate in r/Teachers and r/education over Time
+## Figure 3. Response Rate in r/Teachers and r/education
 
-```{r table3, include=TRUE, echo=FALSE}
+```{r table3, include=TRUE, echo=FALSE, message=FALSE}
 ## have to subtract 1 to account for NA rows for n_threads and n_responses
-table4_teachers <- merged_teachers %>% 
+table3_teachers <- 
+        merged_teachers %>% 
         group_by(post_semester) %>% 
         summarize(n_posts_teachers = length(unique(post_id)),
                   n_threads_teachers = length(unique(thread_id)) - 1,
@@ -634,7 +754,7 @@ table4_teachers <- merged_teachers %>%
                n_posts_teachers, n_threads_teachers, n_responses_teachers, 
                response_rate_teachers, responses_per_thread_teachers) %>%
         rename(semester=post_semester)
-table4_education <- merged_education %>% 
+table3_education <- merged_education %>% 
         group_by(post_semester) %>% 
         summarize(n_posts_education = length(unique(post_id)),
                   n_threads_education = length(unique(thread_id)) - 1,
@@ -649,11 +769,14 @@ table4_education <- merged_education %>%
                response_rate_education, responses_per_thread_education) %>%
         rename(semester=post_semester)
 
-table4 <- table4_teachers %>% full_join(table4_education, by='semester') %>%
+table3 <- 
+        table3_teachers %>% 
+        full_join(table3_education, by='semester') %>%
         select(semester, 
                response_rate_teachers, response_rate_education,
                responses_per_thread_teachers, responses_per_thread_education)
-table4_kable <- table4 %>% 
+table3_kable <- 
+        table3 %>% 
         knitr::kable(align='c',
                      col.names=c("Year", 
                                  "r/Teachers", "r/edcuation",
@@ -661,12 +784,17 @@ table4_kable <- table4 %>%
                      ) %>% 
         kable_styling(c("striped", "bordered")) %>%
         add_header_above(c(" " = 1, "Response Rate %" = 2, "Responses per Thread" = 2))
-#save_kable(table4_kable, "output/table4.png")  # requires webshot::install_phantomjs()
-table4_kable
+table3_kable
 ```
 
-```{r response-rate, include=TRUE, echo=FALSE}
-tidy_table4 <- table4 %>% 
+
+```{r}
+save_kable(table3_kable, "output/table3.png")  # requires webshot::install_phantomjs()
+```
+
+```{r table3_to_plot, include=FALSE}
+table3_to_plot <- 
+        table3 %>% 
         select(-starts_with("responses_per_thread")) %>%
         pivot_longer(cols = -semester, 
                      names_to = c("subreddit"),
@@ -686,8 +814,16 @@ tidy_table4 <- table4 %>%
                                                )
                                         )
                                  )
-               )
-ggplot(data = tidy_table4, 
+               ) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
+        )
+```
+
+```{r figure3, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = table3_to_plot, 
        mapping = aes(x=date_bin, y=proportion, 
                      color=subreddit,
                      group=subreddit
@@ -713,13 +849,14 @@ ggplot(data = tidy_table4,
 ```
 
 ```{r, include=FALSE}
-#ggsave("output/response-rate.png", width = 16, height = 9)
+ggsave("output/fig3-response-rate.png", width = 16, height = 9)
 ```
 
-## Figure 5. Thread Lengths in r/Teachers and r/education over Time
+## Figure 4. Thread Lengths in r/Teachers and r/education
 
-```{r thread-length, include=TRUE, echo=FALSE}
-tidy_table5 <- table4 %>% 
+```{r, include=FALSE}
+table4_to_plot <- 
+        table3 %>% 
         select(-starts_with("response_rate")) %>%
         pivot_longer(cols = -semester, 
                      names_to = c("subreddit"),
@@ -739,8 +876,16 @@ tidy_table5 <- table4 %>%
                                                )
                                         )
                                  )
+               ) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
                )
-ggplot(data = tidy_table5, 
+```
+
+```{r thread-length-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = table4_to_plot, 
        mapping = aes(x=date_bin, y=responses, 
                      color=subreddit,
                      group=subreddit
@@ -766,13 +911,14 @@ ggplot(data = tidy_table5,
 ```
 
 ```{r, include=FALSE}
-#ggsave("output/thread-length.png", width = 16, height = 9)
+ggsave("output/fig4-thread-length.png", width = 16, height = 9)
 ```
 
-## Figure 6. Percentage of Self-replies per Thread in r/Teachers and r/education over Time
+## Percentage of Self-responses per Thread in r/Teachers and r/education
 
-```{r, include=TRUE, echo=FALSE}
-self_responses_teachers <- merged_teachers %>% 
+```{r, include=FALSE}
+self_responses_teachers <- 
+        merged_teachers %>% 
         distinct(post_id, .keep_all = TRUE) %>%
         mutate(subreddit = "teachers",
                date_bin = ifelse(post_semester==2016.1, "2016-Jan-Jun",
@@ -790,7 +936,8 @@ self_responses_teachers <- merged_teachers %>%
                                  )
                ) %>%
         select(date_bin, subreddit, post_id, p_self_responses)
-self_responses_education <- merged_education %>% 
+self_responses_education <- 
+        merged_education %>% 
         distinct(post_id, .keep_all = TRUE) %>%
         mutate(subreddit = "education",
                date_bin = ifelse(post_semester==2016.1, "2016-Jan-Jun",
@@ -808,22 +955,32 @@ self_responses_education <- merged_education %>%
                                  )
                ) %>%
         select(date_bin, subreddit, post_id, p_self_responses)
-plot_self_responses <- self_responses_teachers %>%
+plot_self_responses <- 
+        self_responses_teachers %>%
         rbind(self_responses_education) %>% 
-        mutate(p_self_responses = as.numeric(p_self_responses))
+        mutate(p_self_responses = as.numeric(p_self_responses)) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
+               )
+```
+
+```{r self-response-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
 ggplot(data = plot_self_responses, 
        mapping = aes(x = date_bin, 
                      y = p_self_responses, 
                      color = subreddit, 
                      shape = subreddit,
-                     group = subreddit)
+                     group = subreddit
+                     )
        ) +
         geom_point(size = 8, alpha = .8) +
         geom_smooth(method='lm', se=FALSE, size=2, alpha = .8) +
         scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
         scale_shape_manual(values = c(2, 1)) +
         xlab(NULL) +
-        ylab("Percentage of Self-replies per Thread") +
+        ylab("Percentage of Self-responses per Thread") +
         ylim(0, 100) + 
         theme_bw() +
         theme(panel.grid.major = element_line(color = "gray30"),
@@ -838,14 +995,15 @@ ggplot(data = plot_self_responses,
 ```
 
 ```{r, include=FALSE}
-#ggsave("output/self-replies.png", width = 16, height = 9)
+ggsave("output/self-replies.png", width = 16, height = 9)
 ```
 
-## Figure 7. Transitivity in r/Teachers and r/education over Time
+## Figure 5. Node Degree in r/Teachers and r/education
 
-```{r transitivity, include=TRUE, echo=FALSE}
+```{r network-setup, include=FALSE}
 ## retrieve the name of the parent author, create edgelist, and then build the network graph
-network_graph_teachers <- merged_teachers %>%
+network_graph_teachers <- 
+        merged_teachers %>%
         filter(parent_id %in% c(posts_teachers$post_id, 
                                          responses_teachers$thread_id, 
                                          responses_teachers$response_id)) %>%
@@ -860,11 +1018,15 @@ network_graph_teachers <- merged_teachers %>%
                         select(response_author, parent_author)%>%
                         as.matrix() %>%
                         graph_from_edgelist(directed=TRUE) %>% 
-                        set_vertex_attr(name='degree', value=degree(., mode='total', loops=FALSE))
+                        set_vertex_attr(name='degree', 
+                                        value=degree(., mode='total', loops=FALSE)
+                                        )
                 }
                )
 #summary(network_graph_teachers[[1]])
-network_graph_education <- merged_education %>%
+
+network_graph_education <- 
+        merged_education %>%
         filter(parent_id %in% c(posts_education$post_id, 
                                          responses_education$thread_id, 
                                          responses_education$response_id)) %>%
@@ -879,126 +1041,57 @@ network_graph_education <- merged_education %>%
                         select(response_author, parent_author)%>%
                         as.matrix() %>%
                         graph_from_edgelist(directed=TRUE) %>% 
-                        set_vertex_attr(name='degree', value=degree(., mode='total', loops=FALSE))
+                        set_vertex_attr(name='degree', 
+                                        value=degree(., mode='total', loops=FALSE)
+                        )
                 }
                )
-date_bin <- c("2016-Jan-Jun", "2016-Jul-Dec",
-              "2017-Jan-Jun", "2017-Jul-Dec",
-              "2018-Jan-Jun", "2018-Jul-Dec", 
-              "2019-Jan-Jun")
-transitivity_teachers <- sapply(network_graph_teachers, transitivity) %>% round(4)
-transitivity_education <- sapply(network_graph_education, transitivity) %>% round(4)
-plot_transitivity <- as.data.frame(date_bin) %>%
-        cbind(transitivity_teachers) %>%
-        cbind(transitivity_education) %>%
-        pivot_longer(cols = -date_bin, 
-                     names_to = c("subreddit"),
-                     names_pattern = "transitivity_(.*)",
-                     values_to = "score"
-                     )
-ggplot(data = plot_transitivity, 
-       mapping = aes(x=date_bin, y=score, 
-                     color=subreddit,
-                     group=subreddit
-                     )
-       ) +
-        geom_point(size = 12, alpha = .8) +
-        geom_line(size = 2) +
-        scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
-        xlab(NULL) +
-        ylab("Transitivity Score") +
-        ylim(0, 0.03) +
-        theme_bw() +
-        theme(panel.grid.major = element_line(color = "gray30"),
-              panel.grid.minor = element_line(color = "white"),
-              axis.title=element_text(size=28, family='serif'),
-              axis.text=element_text(size=18, family='serif'),
-              legend.position='bottom',
-              legend.box.background = element_rect(),
-              legend.title=element_text(size=28, family='serif'), 
-              legend.text=element_text(size=24, family='serif')
-              ) +
-        labs(color='Subreddit:')
+date_bin <- 
+        c("2016-Jan-Jun", "2016-Jul-Dec",
+          "2017-Jan-Jun", "2017-Jul-Dec",
+          "2018-Jan-Jun", "2018-Jul-Dec", 
+          "2019-Jan-Jun")
 ```
 
-```{r, include=FALSE}
-#ggsave("output/transitivity.png", width = 16, height = 9)
-```
-
-## Figure 8. Reciprocity in r/Teachers and r/education over Time
-
-```{r reciprocity, include=TRUE, echo=FALSE}
-reciprocity_teachers <- sapply(network_graph_teachers, reciprocity) %>% round(4)
-reciprocity_education <- sapply(network_graph_education, reciprocity) %>% round(4)
-plot_reciprocity <- as.data.frame(date_bin) %>%
-        cbind(reciprocity_teachers) %>%
-        cbind(reciprocity_education) %>%
-        pivot_longer(cols = -date_bin, 
-                     names_to = c("subreddit"),
-                     names_pattern = "reciprocity_(.*)",
-                     values_to = "score"
-                     )
-ggplot(data = plot_reciprocity, 
-       mapping = aes(x=date_bin, y=score, 
-                     color=subreddit,
-                     group=subreddit
-                     )
-       ) +
-        geom_point(size = 12, alpha = .8) +
-        geom_line(size = 2) +
-        scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
-        xlab(NULL) +
-        ylab("Reciprocity Score") +
-        ylim(0, 0.008) +
-        theme_bw() +
-        theme(panel.grid.major = element_line(color = "gray30"),
-              panel.grid.minor = element_line(color = "white"),
-              axis.title=element_text(size=28, family='serif'),
-              axis.text=element_text(size=18, family='serif'),
-              legend.position='bottom',
-              legend.box.background = element_rect(),
-              legend.title=element_text(size=28, family='serif'), 
-              legend.text=element_text(size=24, family='serif')
-              ) +
-        labs(color='Subreddit:')
-```
-
-```{r, include=FALSE}
-#ggsave("output/reciprocity.png", width = 16, height = 9)
-```
-
-## Figure 9. Degree of Connectedness in r/Teachers and r/education over Time
-
-```{r degree, include=TRUE, echo=FALSE}
-degrees_teachers_list <- lapply(network_graph_teachers, function(x) {vertex_attr(x, name='degree')})
-names(degrees_teachers_list) <- date_bin
-degrees_teachers_df <- map_df(degrees_teachers_list, ~ as.data.frame(.x), .id='date_bin') %>%
+```{r degree, include=FALSE}
+degrees_teachers_list <- 
+        lapply(network_graph_teachers, function(x) {vertex_attr(x, name='degree')})
+names(degrees_teachers_list) <- 
+        date_bin
+degrees_teachers_df <-
+        map_df(degrees_teachers_list, ~ as.data.frame(.x), .id='date_bin') %>%
         rename(degree_teachers = .x) %>%
         pivot_longer(cols = -date_bin, 
                      names_to = c("subreddit"),
                      names_pattern = "degree_(.*)",
                      values_to = "degree"
                      )
-#degrees_teachers_df %>% 
-#        group_by(date_bin) %>% 
-#        summarize(mean = mean(degree),
-#                  median = median(degree),
-#                  quantile25 = quantile(., .25)
-#                  )
 
-degrees_education_list <- lapply(network_graph_education, function(x) {vertex_attr(x, name='degree')})
-names(degrees_education_list) <- date_bin
-degrees_education_df <- map_df(degrees_education_list, ~ as.data.frame(.x), .id='date_bin') %>%
+degrees_education_list <- 
+        lapply(network_graph_education, function(x) {vertex_attr(x, name='degree')})
+names(degrees_education_list) <- 
+        date_bin
+degrees_education_df <- 
+        map_df(degrees_education_list, ~ as.data.frame(.x), .id='date_bin') %>%
         rename(degree_education = .x) %>%
         pivot_longer(cols = -date_bin, 
                      names_to = c("subreddit"),
                      names_pattern = "degree_(.*)",
                      values_to = "degree"
                      )
-plot_degree <- degrees_teachers_df %>%
-        rbind(degrees_education_df) %>% 
-        mutate(degree = as.numeric(degree))
 
+plot_degree <- 
+        degrees_teachers_df %>%
+        rbind(degrees_education_df) %>% 
+        mutate(degree = as.numeric(degree)) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
+               )
+```
+
+```{r degree-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
 ggplot(data = plot_degree, 
        mapping = aes(x = date_bin, 
                      y = degree + 1, 
@@ -1026,7 +1119,169 @@ ggplot(data = plot_degree,
 ```
 
 ```{r, include=FALSE}
-#ggsave("output/degree-node.png", width = 16, height = 9)
+ggsave("output/node-degree.png", width = 16, height = 9)
+```
+
+```{r mean-degree, include=FALSE}
+mean_degrees_teachers_df <-
+        degrees_teachers_df %>%
+        group_by(date_bin, subreddit) %>%
+        summarize(degree = mean(degree))
+mean_degrees_education_df <-
+        degrees_education_df %>%
+        group_by(date_bin, subreddit) %>%
+        summarize(degree = mean(degree))
+plot_mean_degree <- 
+        mean_degrees_teachers_df %>%
+        rbind(mean_degrees_education_df) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
+               )
+```
+
+```{r mean-degree-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = plot_mean_degree, 
+       mapping = aes(x=date_bin, 
+                     y=degree, 
+                     color=subreddit,
+                     group=subreddit
+                     )
+       ) +
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
+        xlab(NULL) +
+        ylab("Node Degree") +
+        ylim(0, 8) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:')
+```
+
+```{r, include=FALSE}
+ggsave("output/fig5-mean-node-degree.png", width = 16, height = 9)
+```
+
+## Figure 6. Transitivity in r/Teachers and r/education
+
+```{r transitivity, include=FALSE}
+transitivity_teachers <- 
+        sapply(network_graph_teachers, transitivity) %>% 
+        round(4)
+transitivity_education <- 
+        sapply(network_graph_education, transitivity) %>% 
+        round(4)
+plot_transitivity <- 
+        as.data.frame(date_bin) %>%
+        cbind(transitivity_teachers) %>%
+        cbind(transitivity_education) %>%
+        pivot_longer(cols = -date_bin, 
+                     names_to = c("subreddit"),
+                     names_pattern = "transitivity_(.*)",
+                     values_to = "score"
+                     ) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
+               )
+```
+
+```{r transitivity-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = plot_transitivity, 
+       mapping = aes(x=date_bin, 
+                     y=score, 
+                     color=subreddit,
+                     group=subreddit
+                     )
+       ) +
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
+        xlab(NULL) +
+        ylab("Transitivity Score") +
+        ylim(0, 0.03) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:')
+```
+
+```{r, include=FALSE}
+ggsave("output/fig6-transitivity.png", width = 16, height = 9)
+```
+
+## Figure 7. Reciprocity in r/Teachers and r/education
+
+```{r reciprocity, include=FALSE}
+reciprocity_teachers <- 
+        sapply(network_graph_teachers, reciprocity) %>% 
+        round(4)
+reciprocity_education <- 
+        sapply(network_graph_education, reciprocity) %>% 
+        round(4)
+plot_reciprocity <- 
+        as.data.frame(date_bin) %>%
+        cbind(reciprocity_teachers) %>%
+        cbind(reciprocity_education) %>%
+        pivot_longer(cols = -date_bin, 
+                     names_to = c("subreddit"),
+                     names_pattern = "reciprocity_(.*)",
+                     values_to = "score"
+                     ) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
+               )
+```
+
+```{r reciprocity-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = plot_reciprocity, 
+       mapping = aes(x=date_bin, 
+                     y=score, 
+                     color=subreddit,
+                     group=subreddit
+                     )
+       ) +
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("#EE442F", "#63ACBE")) + 
+        xlab(NULL) +
+        ylab("Reciprocity Score") +
+        ylim(0, 0.008) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:')
+```
+
+```{r, include=FALSE}
+ggsave("output/fig7-reciprocity.png", width = 16, height = 9)
 ```
 
 # Sample posts for qualitative content analysis
@@ -1034,59 +1289,42 @@ ggplot(data = plot_degree,
 Finally, we took a purposeful sample of the Top-10 posts with most responses (or highest voting score) x 7 semesters x 2 subreddits, then up to the Top-10 responses to each (140 posts + up to 1400 responses).
 
 ```{r sample, include=FALSE}
-top_posts_teachers <- merged_teachers %>%
+top_posts_teachers <- 
+        merged_teachers %>%
         distinct(post_id, .keep_all=TRUE) %>%
         group_by(post_semester) %>%
         top_n(n=10, wt=post_voting_score) %>%
         pull(post_id)
-sample_teachers <- merged_teachers %>%
+sample_teachers <- 
+        merged_teachers %>%
         filter(post_id %in% top_posts_teachers) %>%
         group_by(post_id) %>%
         top_n(n=10, wt=response_voting_score) %>%
-        select(subreddit.x, post_id, post_date_time, post_voting_score, post_author, title, post_text, 
-              response_id, response_date_time, response_voting_score, response_author, response_text,
-              n_self_responses, p_self_responses, self_response, url, permalink)
-#sample_teachers %>% write.csv("sample_teachers.csv", row.names=FALSE)
+        select(subreddit.x, post_id, post_date_time, post_voting_score, 
+               post_author, title, post_text, response_id, response_date_time, 
+               response_voting_score, response_author, response_text,
+               n_self_responses, p_self_responses, self_response, url, permalink)
 
-
-
-#sample_teachers %>% count(post_id) %>% View()
-#sample_teachers %>% filter(post_id == "4osxxt") %>% View()
-#merged_teachers %>% filter(post_id == "4osxxt") %>% View()
-        
-#tmp <- read.csv("tmp.csv", header=TRUE, colClasses='character') 
-#which(sample_teachers$post_id %in% tmp$X.1) %>% length
-#tmp %>% count(X.1)
-
-#sample_education %>% count(post_id) %>% View()
-#sample_education %>% filter(post_id == "7kv0as") %>% View()
-#merged_education %>% filter(post_id == "7kv0as") %>% View()
-
-
-top_posts_education <- merged_education %>%
+top_posts_education <- 
+        merged_education %>%
         distinct(post_id, .keep_all=TRUE) %>%
         group_by(post_semester) %>%
         top_n(n=10, wt=post_voting_score) %>%
         pull(post_id)
-sample_education <- merged_education %>%
+sample_education <- 
+        merged_education %>%
         filter(post_id %in% top_posts_education) %>%
         group_by(post_id) %>%
         top_n(n=10, wt=response_voting_score) %>%
-        select(subreddit.x, post_id, post_date_time, post_voting_score, post_author, title, post_text, 
-              response_id, response_date_time, response_voting_score, response_author, response_text,
-              n_self_responses, p_self_responses, self_response, url, permalink)
-#sample_education %>% write.csv("sample_education.csv", row.names=FALSE)
+        select(subreddit.x, post_id, post_date_time, post_voting_score, 
+               post_author, title, post_text, response_id, response_date_time, 
+               response_voting_score, response_author, response_text,
+               n_self_responses, p_self_responses, self_response, url, permalink)
+```
 
-
-#########################################
-#sample_unshuffled <- sample_teachers %>% rbind(sample_education)
-#set.seed(1152020)
-#sample_shuffled <- sample_unshuffled[sample(1:nrow(sample_unshuffled)), ]
-
-#set.seed(1132020)
-#random_sample_teachers <- merged_teachers %>%
-#        group_by(post_semester) %>%
-#        sample_n(size=10)
+```{r save-sample, include=FALSE, evaluate=FALSE}
+write.csv(sample_teachers, "data/sample_teachers.csv", row.names=FALSE)
+write.csv(sample_education, "data/sample_education.csv", row.names=FALSE)
 ```
 
 # Version/dependencies
