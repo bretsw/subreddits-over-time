@@ -1,40 +1,30 @@
 ---
-title: "Continuity and Change in Teaching-Related Subreddits"
+title: "A Tale of Two Subreddits: Change and Continuity in Teaching-Related Online Spaces"
 author: "K. Bret Staudt Willet & Jeffrey P. Carpenter"
-date: "05/13/2020"
-output:
-  pdf_document:
-    toc: yes
-  html_document:
-    float_toc: yes
-    toc: yes
+date: "06/02/2020"
 ---
 
 # Get set up
 
 This section loads the data and packages and starts to process the data, but doesn't calculate any statistics or create any results.
 
-1. Load packages
-
-```{r, include=FALSE}
+```{r setup, include=FALSE}
 library(tidyverse)
 library(anytime)
 library(lubridate)
 library(knitr)
 library(kableExtra)
 library(igraph)
-```
+library(ggraph)
+library(grid)
+library(gridExtra)
+library(ggradar)
 
-2. Set up settings for sharing 
-
-```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=TRUE)
 usethis::use_git_ignore(c("*.csv", "*.rds", ".log"))
 ```
 
-3. Set timeframe
-
-```{r timeframe, include=FALSE}
+```{r set-timeframe, include=FALSE}
 date_start <- 
         as_datetime("2016-01-01 05:00:00 UTC") %>% 
         ymd_hms() %>%
@@ -44,8 +34,6 @@ date_end <-
         ymd_hms() %>%
         with_tz(tzone="US/Eastern")
 ```
-
-4. Load posts
 
 ```{r posts-load, include=FALSE}
 posts_teachers0 <- 
@@ -62,8 +50,6 @@ posts_education0 <-
                  ) %>%
         as_tibble()
 ```
-
-5. Process posts
 
 ```{r posts-process, include=FALSE}
 posts_teachers <- 
@@ -129,8 +115,6 @@ posts_education <-
 rm(posts_education0)
 ```
 
-6. Load responses
-
 ```{r responses-load, include=FALSE}
 responses_teachers0 <- 
         read.csv("data/r-teachers-responses.csv", 
@@ -146,8 +130,6 @@ responses_education0 <-
                  ) %>%
         as_tibble()
 ```
-
-7. Process subreddit responses
 
 ```{r responses-process, include=FALSE}
 responses_teachers <- 
@@ -214,8 +196,6 @@ responses_education <-
                )
 rm(responses_education0)
 ```
-
-8. Create a merged dataframe of posts and responses for both subreddits.
 
 ```{r merged, include=FALSE}
 merged_teachers <- 
@@ -409,7 +389,7 @@ ggplot(data = to_plot, mapping = aes(x=day, y=n, color=subreddit, shape=type)) +
         labs(color='Subreddit', shape='Type of Contribution:')
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig1-contributions-over-time.png", width = 16, height = 9)
 ```
 
@@ -508,9 +488,9 @@ table1_kable <-
 table1_kable
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 # requires webshot::install_phantomjs()
-save_kable(table1_kable, "output/table1.png")
+save_kable(table1_kable, "output/table1-contributors.png")
 ```
 
 ```{r table1-to-plot, include=FALSE}
@@ -574,7 +554,7 @@ ggplot(data = table1_to_plot,
         labs(color='Subreddit:', shape='Type of Contributor:')
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig2-contributors.png", width = 16, height = 9)
 ```
 
@@ -670,8 +650,8 @@ table2_kable <- table2 %>%
 table2_kable
 ```
 
-```{r, include=FALSE}
-save_kable(table2_kable, "output/table2.png")
+```{r, include=FALSE, eval=FALSE}
+save_kable(table2_kable, "output/table2-extent-of-participation.png")
 ```
 
 ```{r table2-to-plot, include=FALSE}
@@ -703,7 +683,7 @@ table2_to_plot <-
         )
 ```
 
-```{r degree-of-contribution-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+```{r extent-of-contribution-plot, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
 ggplot(data = table2_to_plot, 
        mapping = aes(x=date_bin, y=proportion, 
                      color=subreddit,
@@ -731,8 +711,8 @@ ggplot(data = table2_to_plot,
         labs(color='Subreddit:', shape='Degree of Contribution:')
 ```
 
-```{r, include=FALSE}
-ggsave("output/degree-of-contribution.png", width = 16, height = 9)
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/extent-of-contribution.png", width = 16, height = 9)
 ```
 
 ## Figure 3. Response Rate in r/Teachers and r/education
@@ -788,8 +768,8 @@ table3_kable
 ```
 
 
-```{r}
-save_kable(table3_kable, "output/table3.png")  # requires webshot::install_phantomjs()
+```{r, include=FALSE, eval=FALSE}
+save_kable(table3_kable, "output/table3-response-rate.png")  # requires webshot::install_phantomjs()
 ```
 
 ```{r table3_to_plot, include=FALSE}
@@ -848,7 +828,7 @@ ggplot(data = table3_to_plot,
         labs(color='Subreddit:')
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig3-response-rate.png", width = 16, height = 9)
 ```
 
@@ -910,7 +890,7 @@ ggplot(data = table4_to_plot,
         labs(color='Subreddit:')
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig4-thread-length.png", width = 16, height = 9)
 ```
 
@@ -994,7 +974,7 @@ ggplot(data = plot_self_responses,
               )
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/self-replies.png", width = 16, height = 9)
 ```
 
@@ -1051,6 +1031,27 @@ date_bin <-
           "2017-Jan-Jun", "2017-Jul-Dec",
           "2018-Jan-Jun", "2018-Jul-Dec", 
           "2019-Jan-Jun")
+names(network_graph_teachers) <- 
+        date_bin
+names(network_graph_education) <- 
+        date_bin
+
+measure_edges <- function(x){
+
+        }
+nodes_te <- map_dbl(network_graph_teachers, function(x) as.vector(length(V(x)))) %>% 
+        mean() %>% 
+        round(0)
+nodes_ed <- map_dbl(network_graph_education, function(x) as.vector(length(V(x)))) %>% 
+        mean() %>% 
+        round(0)
+edges_te <- map_dbl(network_graph_teachers, function(x) as.vector(length(E(x)))) %>% 
+        mean() %>% 
+        round(0)
+edges_ed <- map_dbl(network_graph_education, function(x) as.vector(length(E(x)))) %>% 
+        mean() %>% 
+        round(0)
+#nodes_te; nodes_ed; edges_te; edges_ed
 ```
 
 ```{r degree, include=FALSE}
@@ -1118,7 +1119,7 @@ ggplot(data = plot_degree,
               )
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/node-degree.png", width = 16, height = 9)
 ```
 
@@ -1168,7 +1169,7 @@ ggplot(data = plot_mean_degree,
         labs(color='Subreddit:')
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig5-mean-node-degree.png", width = 16, height = 9)
 ```
 
@@ -1224,7 +1225,7 @@ ggplot(data = plot_transitivity,
         labs(color='Subreddit:')
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig6-transitivity.png", width = 16, height = 9)
 ```
 
@@ -1280,8 +1281,86 @@ ggplot(data = plot_reciprocity,
         labs(color='Subreddit:')
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig7-reciprocity.png", width = 16, height = 9)
+```
+
+## Figure 8. Network Visualizations of r/Teachers and r/education
+
+```{r network-viz-setup, include=FALSE}
+remove_isolated <- function(x) {
+        delete.vertices(x, which(vertex_attr(x, name='degree')==0))
+}
+
+network_teachers_connected <-
+        lapply(network_graph_teachers, remove_isolated)
+network_education_connected <-
+        lapply(network_graph_education, remove_isolated)
+
+network_viz_setup <- function(x) {
+        x %>%
+        create_layout(layout = 'drl') %>%
+        ggraph()
+}
+
+network_viz_teachers <- 
+        lapply(network_teachers_connected, network_viz_setup)
+network_viz_education <- 
+        lapply(network_education_connected, network_viz_setup)
+```
+
+```{r network-viz, include=FALSE, warning=FALSE}
+viz_to_plot <- function(x) {
+        x +
+                geom_edge_arc(alpha = .2, width = .5, curvature = .3) +
+                geom_node_point(alpha = .2, size = 2) +
+                theme_void() +
+                theme(aspect.ratio = 1)
+}
+
+plot_te <- 
+        lapply(network_viz_teachers, viz_to_plot)
+plot_ed <-
+        lapply(network_viz_education, viz_to_plot)
+```
+
+```{r, include=FALSE}
+plot_te[[1]] <-  
+        plot_te[[1]] +
+        ggtitle("r/Teachers") +
+        ylab("Jan-Jun 2016") + 
+        xlab(NULL) +
+        theme(plot.title = element_text(size=48, family='serif', hjust = 0.5),
+              axis.title=element_text(size=32, family='serif', angle = 90))
+plot_te[[4]] <-  
+        plot_te[[4]] +
+        ylab("Jul-Dec 2017") + 
+        xlab(NULL) +
+        theme(axis.title=element_text(size=32, family='serif', angle = 90))
+plot_te[[7]] <-  
+        plot_te[[7]] +
+        ylab("Jan-Jun 2019") + 
+        xlab(NULL) +
+        theme(axis.title=element_text(size=32, family='serif', angle = 90))
+plot_ed[[1]] <-
+        plot_ed[[1]] + 
+        ggtitle("r/education") +
+        theme(plot.title = element_text(size=48, family='serif', hjust = 0.5))
+```
+
+
+```{r network-grid-layout, include=TRUE, echo=FALSE, message=FALSE, fig.width=16, fig.height=18}
+network_grid_plots <- 
+        plot_grid(plot_te[[1]], plot_ed[[1]], 
+                  plot_te[[4]], plot_ed[[4]],
+                  plot_te[[7]], plot_ed[[7]], 
+                  nrow=3)
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/fig8-network-visualization.png", 
+       plot = network_grid_plots, 
+       width = 16, height = 18)
 ```
 
 # Sample posts for qualitative content analysis
@@ -1322,10 +1401,440 @@ sample_education <-
                n_self_responses, p_self_responses, self_response, url, permalink)
 ```
 
-```{r save-sample, include=FALSE, evaluate=FALSE}
+```{r save-sample, include=FALSE, eval=FALSE}
 write.csv(sample_teachers, "data/sample_teachers.csv", row.names=FALSE)
 write.csv(sample_education, "data/sample_education.csv", row.names=FALSE)
 ```
+
+# Topics and discourse over time (POSTS)
+
+```{r, include=FALSE, message=FALSE, eval=FALSE}
+all_coded_with_dates <- read_csv("data/final-coded-sample.csv")
+```
+
+## Figure 9. Post Topics and Discourse in r/Teachers and r/education
+
+```{r post_comparison_table, echo=FALSE}
+post_comparison <- 
+        all_coded_with_dates %>%
+        distinct(post_id, .keep_all = TRUE) %>%
+        mutate(post_semester = ifelse(post_semester==2016.1, "2016-Jan-Jun",
+                                 ifelse(post_semester==2016.2, "2016-Jul-Dec",
+                                        ifelse(post_semester==2017.1, "2017-Jan-Jun",
+                                               ifelse(post_semester==2017.2, "2017-Jul-Dec",
+                                                      ifelse(post_semester==2018.1, "2018-Jan-Jun",
+                                                             ifelse(post_semester==2018.2, "2018-Jul-Dec", 
+                                                                    "2019-Jan-Jun"
+                                                                    )
+                                                             )
+                                                      )
+                                               )
+                                        )
+                                 )
+               ) %>%
+        group_by(subreddit, post_semester) %>%
+        summarize_at(vars(EP_Politics:Asks_Question), sum) %>%
+        ungroup()
+        
+post_comparison_table0 <-
+        post_comparison %>%
+        select(-subreddit, -post_semester) %>%
+        t()
+post_comparison_table <-
+        post_comparison_table0 %>%
+        knitr::kable(align = 'c',
+                     row.names = TRUE,
+                     col.names = c("2016 Jan-Jun", "2016 Jul-Dec", "2017 Jan-Jun", "2017 Jul-Dec",
+                                 "2018 Jan-Jun", "2018 Jul-Dec", "2019 Jan-Jun",
+                                 "2016 Jan-Jun", "2016 Jul-Dec", "2017 Jan-Jun", "2017 Jul-Dec",
+                                 "2018 Jan-Jun", "2018 Jul-Dec", "2019 Jan-Jun"
+                                 )
+                     ) %>% 
+        kableExtra::add_header_above(c(" " = 1, "r/edcuation" = 7, "r/Teachers" = 7)) %>%
+        kableExtra::kable_styling(c("striped", "bordered"))
+post_comparison_table
+```
+
+```{r include=FALSE, eval=FALSE}
+save_kable(post_comparison_table, "output/table4-post-content-comparison-over-time.png")
+```
+
+```{r post_comparison_total, echo=FALSE, message=FALSE}
+post_comparison_total <-
+        post_comparison %>%
+        pivot_longer(cols = EP_Politics:Asks_Question, 
+                     names_to = "code") %>%
+        group_by(subreddit, code) %>%
+        summarize(n = sum(value)) %>%
+        ungroup() %>%
+        pivot_wider(names_from = subreddit, values_from = n) %>%
+        column_to_rownames("code") %>%
+        knitr::kable(align = 'c',
+                     row.names = TRUE,
+                     col.names = c("r/education", "r/Teachers")
+                     ) %>%
+        kableExtra::kable_styling(c("striped", "bordered"))
+post_comparison_total
+```
+
+```{r include=FALSE, eval=FALSE}
+save_kable(post_comparison_total, "output/table5-post-content-comparison-total.png")
+```
+
+```{r post_comparison_plot, echo=FALSE, fig.width=16, fig.height=18}
+names(post_comparison) <-
+        c("subreddit", "post_semester",
+          "Ed Policy: Policy Makers & Politics",
+          "Ed Policy: School Choice",
+          "Ed Policy: Curriculum & Evaluation",
+          "Ed Policy: Finance",
+          "Ed Policy: Higher Education",
+          "Societal Factors Impacting Education",
+          "Teaching Pedagogy & Philosophy",
+          "Teachers’ Lived Experiences",
+          "Title & Hyperlink Only",
+          "Personal Story",
+          "Humor",
+          "Quote",
+          "Critique",
+          "Call for Change",
+          "Question"
+          )
+
+post_comparison_to_plot <-
+        post_comparison %>%
+        pivot_longer(cols = `Ed Policy: Policy Makers & Politics`:Question, 
+                     names_to = "code")
+
+post_plot <-
+        ggplot(data = post_comparison_to_plot,
+               aes(x = code, y = value, fill = subreddit)
+               ) +
+        geom_col(color = 'black',
+                 width = 0.5, 
+                 position = position_dodge(width = 0.5)) + 
+        scale_fill_manual(values = c("#EE442F", "#63ACBE")) +
+        theme_bw() + 
+        facet_grid(rows = vars(post_semester))
+
+post_plot + 
+        xlab(NULL) +
+        ylab("Number of Posts") +
+        theme(axis.title = element_text(size = 28, 
+                                        family = 'serif'),
+              strip.text.y = element_text(size = 16, 
+                                          family = 'serif',
+                                          angle = 90),
+              axis.text.x = element_text(size = 24,
+                                         family='serif',
+                                         angle = 45, 
+                                         vjust = 1, hjust=1),
+              axis.text.y = element_text(size = 18, 
+                                         family='serif'),
+              #axis.ticks.x = element_line(size = 5),
+              axis.ticks.length = unit(.25, 'cm'),
+              panel.spacing = unit(2, 'lines'),
+              legend.position='top',
+              legend.box = 'vertical',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=32, family='serif'), 
+              legend.text=element_text(size=28, family='serif')
+              ) +
+        labs(fill = 'Subreddit')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/fig9-post-plot-bar.png", width = 16, height = 18)
+```
+
+```{r, echo=FALSE, fig.width=16, fig.height=9}
+post_teachers_to_plot <-
+        post_comparison_to_plot %>%
+        filter(subreddit == "r/Teachers")
+post_teachers_plot <-
+        ggplot(data = post_teachers_to_plot,
+               aes(x = code, y = value, fill = value)
+               ) +
+        geom_col() + 
+        theme_bw() + 
+        scale_fill_gradient(low = "#BBF7F9",
+                            high = "#63ACBE",
+                            limits=c(0,10)) +
+        facet_wrap(~ post_semester, nrow = 2)
+post_teachers_plot + coord_polar() + theme(axis.text.x = element_text(angle=-20)) 
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/extra/post-teachers-plot-polar.png", width = 16, height = 9)
+```       
+
+```{r, echo=FALSE, fig.width=16, fig.height=9}
+post_education_to_plot <-
+        post_comparison_to_plot %>%
+        filter(subreddit == "r/education")
+post_education_plot <-
+        ggplot(data = post_education_to_plot,
+               aes(x = code, y = value, fill = value)
+               ) +
+        geom_col() + 
+        theme_bw() + 
+        scale_fill_gradient(low = "#FDBB97",
+                            high = "#EE442F",
+                            limits=c(0,10)) +
+        facet_wrap(~ post_semester, nrow = 2)
+post_education_plot + coord_polar() + theme(axis.text.x = element_text(angle=-20)) 
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/extra/post-education-plot-polar.png", width = 16, height = 9)
+```    
+
+```{r, echo=FALSE, fig.width=8.5, fig.height=11}
+post_radar_list <- list()
+for(i in 1:7) {
+        post_radar_list[[i]] <- 
+                ggradar(post_comparison_to_plot %>%
+                        rename(group = subreddit) %>%
+                        filter(post_semester == 
+                                       unique(.$post_semester)[i]) %>%
+                        select(-post_semester) %>%
+                        pivot_wider(names_from = code) %>%
+                        mutate_at(vars(-group), ~ . / 10), 
+                group.colours = c("#EE442F", "#63ACBE"),
+                plot.legend = FALSE
+                )
+}
+post_plots_radar <-
+        grid.arrange(post_radar_list[[1]], post_radar_list[[2]],
+                     post_radar_list[[3]], post_radar_list[[4]],
+                     post_radar_list[[5]], post_radar_list[[6]],
+                     post_radar_list[[7]],
+                     ncol = 2
+             )
+```   
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/extra/post-plot-radar.png", plot = post_plots_radar, width = 8.5, height = 11)
+``` 
+
+# Topics and discourse over time (RESPONSES)
+
+## Figure 10. Response Topics and Discourse in r/Teachers and r/education
+
+```{r post_comparison_table, echo=FALSE}
+response_comparison <- 
+        all_coded_with_dates %>%
+        distinct(response_id, .keep_all = TRUE) %>%
+        mutate(response_semester = ifelse(post_semester==2016.1, "2016-Jan-Jun",
+                                          ifelse(post_semester==2016.2, "2016-Jul-Dec",
+                                                 ifelse(post_semester==2017.1, "2017-Jan-Jun",
+                                                        ifelse(post_semester==2017.2, "2017-Jul-Dec",
+                                                               ifelse(post_semester==2018.1, "2018-Jan-Jun",
+                                                                      ifelse(post_semester==2018.2, "2018-Jul-Dec", 
+                                                                             "2019-Jan-Jun"
+                                                                    )
+                                                             )
+                                                      )
+                                               )
+                                        )
+                                 )
+               ) %>%
+        group_by(subreddit, response_semester) %>%
+        summarize_at(vars(Agreement:Subreddit_Norms), sum) %>%
+        ungroup()
+        
+response_comparison_table0 <-
+        response_comparison %>%
+        select(-subreddit, -response_semester) %>%
+        t()
+row.names(response_comparison_table0) <- 
+        c("Expresses Agreement",
+          "Expresses Disagreement",
+          "Shares Humor",
+          "Shares Critique",
+          "Shares Personal Story",
+          "Provides Additional Information",
+          "Gives Advice",
+          "Asks Question",
+          "Maintains Subreddit Rules & Norms"
+          )        
+response_comparison_table <-
+        response_comparison_table0 %>%
+        knitr::kable(align = 'c',
+                     row.names = TRUE,
+                     col.names = c("2016 Jan-Jun", "2016 Jul-Dec", "2017 Jan-Jun", "2017 Jul-Dec",
+                                 "2018 Jan-Jun", "2018 Jul-Dec", "2019 Jan-Jun",
+                                 "2016 Jan-Jun", "2016 Jul-Dec", "2017 Jan-Jun", "2017 Jul-Dec",
+                                 "2018 Jan-Jun", "2018 Jul-Dec", "2019 Jan-Jun"
+                                 )
+                     ) %>% 
+        kableExtra::add_header_above(c(" " = 1, "r/edcuation" = 7, "r/Teachers" = 7)) %>%
+        kableExtra::kable_styling(c("striped", "bordered"))
+response_comparison_table
+```
+
+```{r include=FALSE, eval=FALSE}
+save_kable(response_comparison_table, "output/table6-response-content-comparison-over-time.png")
+```
+
+```{r response_comparison_total, echo=FALSE, message=FALSE}
+response_comparison_total <-
+        response_comparison %>%
+        pivot_longer(cols = Agreement:Subreddit_Norms, 
+                     names_to = "code") %>%
+        group_by(subreddit, code) %>%
+        summarize(n = sum(value)) %>%
+        ungroup() %>%
+        pivot_wider(names_from = subreddit, values_from = n) %>%
+        column_to_rownames("code") %>%
+        knitr::kable(align = 'c',
+                     row.names = TRUE,
+                     col.names = c("r/education", "r/Teachers")
+                     ) %>%
+        kableExtra::kable_styling(c("striped", "bordered"))
+response_comparison_total
+```
+
+```{r include=FALSE, eval=FALSE}
+save_kable(response_comparison_total, "output/table7-response-content-comparison-total.png")
+```
+
+```{r response_comparison_plot, echo=FALSE}
+response_comparison_to_plot <-
+        response_comparison %>%
+        pivot_longer(cols = Agreement:Subreddit_Norms, 
+                     names_to = "code")
+```
+
+```{r response_comparison_plot, echo=FALSE, fig.width=16, fig.height=18}
+names(response_comparison) <-
+        c("subreddit", "response_semester",
+          "Expresses Agreement",
+          "Expresses Disagreement",
+          "Shares Humor",
+          "Shares Critique",
+          "Shares Personal Story",
+          "Provides Additional Information",
+          "Gives Advice",
+          "Asks Question",
+          "Maintains Subreddit Rules & Norms"
+          )
+
+response_comparison_to_plot <-
+        response_comparison %>%
+        pivot_longer(cols = `Expresses Agreement`:`Maintains Subreddit Rules & Norms`, 
+                     names_to = "code")
+
+response_plot <-
+        ggplot(data = response_comparison_to_plot,
+               aes(x = code, y = value, fill = subreddit)
+               ) +
+        geom_col(color = 'black',
+                 width = 0.5, 
+                 position = position_dodge(width = 0.5)) + 
+        scale_fill_manual(values = c("#EE442F", "#63ACBE")) +
+        theme_bw() + 
+        facet_grid(rows = vars(response_semester))
+
+response_plot + 
+        xlab(NULL) +
+        ylab("Number of Responses") +
+        theme(axis.title = element_text(size = 28, 
+                                        family = 'serif'),
+              strip.text.y = element_text(size = 16, 
+                                          family = 'serif',
+                                          angle = 90),
+              axis.text.x = element_text(size = 24,
+                                         family='serif',
+                                         angle = 45, 
+                                         vjust = 1, hjust=1),
+              axis.text.y = element_text(size = 18, 
+                                         family='serif'),
+              #axis.ticks.x = element_line(size = 5),
+              axis.ticks.length = unit(.25, 'cm'),
+              panel.spacing = unit(2, 'lines'),
+              legend.position='top',
+              legend.box = 'vertical',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=32, family='serif'), 
+              legend.text=element_text(size=28, family='serif')
+              ) +
+        labs(fill = 'Subreddit')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/fig10-response-plot-bar.png", width = 16, height = 18)
+```
+
+```{r, echo=FALSE, fig.width=16, fig.height=9}
+response_teachers_to_plot <-
+        response_comparison_to_plot %>%
+        filter(subreddit == "r/Teachers")
+response_teachers_plot <-
+        ggplot(data = response_teachers_to_plot,
+               aes(x = code, y = value, fill = value)
+               ) +
+        geom_col() + 
+        theme_bw() + 
+        scale_fill_gradient(low = "#BBF7F9",
+                            high = "#63ACBE",
+                            limits = c(0, 80)) +
+        facet_wrap(~ response_semester, nrow = 2)
+response_teachers_plot + coord_polar() + theme(axis.text.x = element_text(angle=-20)) 
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/extra/response-teachers-plot-polar.png", width = 16, height = 9)
+```       
+
+```{r, echo=FALSE, fig.width=16, fig.height=9}
+response_education_to_plot <-
+        response_comparison_to_plot %>%
+        filter(subreddit == "r/education")
+response_education_plot <-
+        ggplot(data = response_education_to_plot,
+               aes(x = code, y = value, fill = value)
+               ) +
+        geom_col() + 
+        theme_bw() + 
+        scale_fill_gradient(low = "#FDBB97",
+                            high = "#EE442F",
+                            limits = c(0,80)) +
+        facet_wrap(~ response_semester, nrow = 2)
+response_education_plot + coord_polar() + theme(axis.text.x = element_text(angle=-20)) 
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/extra/response-education-plot-polar.png", width = 16, height = 9)
+```   
+
+```{r, echo=FALSE, fig.width=8.5, fig.height=11}
+response_radar_list <- list()
+for(i in 1:7) {
+        response_radar_list[[i]] <- 
+                ggradar(response_comparison_to_plot %>%
+                        rename(group = subreddit) %>%
+                        filter(response_semester == 
+                                       unique(.$response_semester)[i]) %>%
+                        select(-response_semester) %>%
+                        pivot_wider(names_from = code) %>%
+                        mutate_at(vars(-group), ~ . / 100), 
+                group.colours = c("#EE442F", "#63ACBE"),
+                plot.legend = FALSE
+                )
+}
+response_plots_radar <-
+        grid.arrange(response_radar_list[[1]], response_radar_list[[2]],
+                     response_radar_list[[3]], response_radar_list[[4]],
+                     response_radar_list[[5]], response_radar_list[[6]],
+                     response_radar_list[[7]],
+                     ncol = 2
+             )
+```   
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output/extra/response-plot-radar.png", plot = response_plots_radar, width = 8.5, height = 11)
+```   
 
 # Version/dependencies
 
