@@ -4,6 +4,10 @@
 
 Despite the ubiquity of social media in modern life, research on educators’ use of social media for professional purposes remains underdeveloped, especially regarding how this use may change, or remain the same, over time. This study explored change and continuity in two education-focused subreddits, r/Teachers and r/education, in terms of how users contribute, interact, and converse. In total, we collected more than a million contributions: 696,660 contributions to r/Teachers from 55,148 users and 339,618 contributions to r/education from 43,711 users, spanning a three-and-a-half-year time period. The affinity space concept framed multiple methods of analysis, including quantitative measures of individual contributions, content interactions, and social interactions, and qualitative content analysis of top posts and responses. Findings are discussed in light of the literature as well as potential implications for practice and future research.
 
+## Data Sharing
+
+Data for this project are publicly available through Open Science Framework (https://osf.io/tm74g/).
+
 ## Data Collection
 
 0. First, check to see the range of dates available for Reddit posts: https://bigquery.cloud.google.com/dataset/fh-bigquery:reddit_posts

@@ -712,7 +712,7 @@ ggplot(data = table2_to_plot,
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-ggsave("output/extent-of-contribution.png", width = 16, height = 9)
+ggsave("output/extra/extent-of-contribution.png", width = 16, height = 9)
 ```
 
 ## Figure 3. Response Rate in r/Teachers and r/education
@@ -975,7 +975,7 @@ ggplot(data = plot_self_responses,
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-ggsave("output/self-replies.png", width = 16, height = 9)
+ggsave("output/extra/self-replies.png", width = 16, height = 9)
 ```
 
 ## Figure 5. Node Degree in r/Teachers and r/education
