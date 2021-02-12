@@ -393,6 +393,33 @@ ggplot(data = to_plot, mapping = aes(x=day, y=n, color=subreddit, shape=type)) +
 ggsave("output/fig1-contributions-over-time.png", width = 16, height = 9)
 ```
 
+```{r, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = to_plot, mapping = aes(x=day, y=n, color=subreddit, shape=type)) +
+        geom_point(size = 3, alpha=.8) + 
+        scale_shape_manual(values = c(17, 3)) +
+        scale_color_manual(values = c("gray70", "black")) + 
+        geom_smooth(method='lm', se=FALSE, size=2) +
+        scale_y_continuous(trans='log10') +
+        xlab(NULL) +
+        ylab("Number of Contributions") +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "gray90"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=24, family='serif'),
+              legend.position='bottom',
+              legend.box = 'vertical',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit', shape='Type of Contribution:')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig1-bw.png", width = 16, height = 9)
+```
+
 In addition to this visualization, it is helpful to print the slopes of the linear regressions.
 
 ```{r regression-lines, include=FALSE, echo=FALSE}
@@ -556,6 +583,40 @@ ggplot(data = table1_to_plot,
 
 ```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig2-contributors.png", width = 16, height = 9)
+```
+
+```{r, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = table1_to_plot, 
+       mapping = aes(x=date_bin, 
+                     y=count, 
+                     color=subreddit,
+                     group=interaction(type, subreddit),
+                     shape=type
+                     )
+       ) + 
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("gray70", "black")) + 
+        scale_shape_manual(values = c(17, 19)) +
+        xlab(NULL) +
+        ylab("Number of Contributors") +
+        ylim(0, 20000) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box = 'vertical',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:', shape='Type of Contributor:')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig2-bw.png", width = 16, height = 9)
 ```
 
 ## Degree of Contribution to r/Teachers and r/education
@@ -832,6 +893,36 @@ ggplot(data = table3_to_plot,
 ggsave("output/fig3-response-rate.png", width = 16, height = 9)
 ```
 
+```{r, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = table3_to_plot, 
+       mapping = aes(x=date_bin, y=proportion, 
+                     color=subreddit,
+                     group=subreddit
+                     )
+       ) +
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("gray70", "black")) + 
+        xlab(NULL) +
+        ylab("Percentage of Subreddit Threads Receiving a Response") +
+        ylim(0, 100) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=24, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig3-bw.png", width = 16, height = 9)
+```
+
 ## Figure 4. Thread Lengths in r/Teachers and r/education
 
 ```{r, include=FALSE}
@@ -894,6 +985,35 @@ ggplot(data = table4_to_plot,
 ggsave("output/fig4-thread-length.png", width = 16, height = 9)
 ```
 
+```{r, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = table4_to_plot, 
+       mapping = aes(x=date_bin, y=responses, 
+                     color=subreddit,
+                     group=subreddit
+                     )
+       ) +
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("gray70", "black")) + 
+        xlab(NULL) +
+        ylab("Mean Number of Responses in Subreddit Threads") +
+        ylim(0, 20) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig4-bw.png", width = 16, height = 9)
+```
 ## Percentage of Self-responses per Thread in r/Teachers and r/education
 
 ```{r, include=FALSE}
@@ -1036,9 +1156,6 @@ names(network_graph_teachers) <-
 names(network_graph_education) <- 
         date_bin
 
-measure_edges <- function(x){
-
-        }
 nodes_te <- map_dbl(network_graph_teachers, function(x) as.vector(length(V(x)))) %>% 
         mean() %>% 
         round(0)
@@ -1173,6 +1290,37 @@ ggplot(data = plot_mean_degree,
 ggsave("output/fig5-mean-node-degree.png", width = 16, height = 9)
 ```
 
+```{r, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = plot_mean_degree, 
+       mapping = aes(x=date_bin, 
+                     y=degree, 
+                     color=subreddit,
+                     group=subreddit
+                     )
+       ) +
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("gray70", "black")) + 
+        xlab(NULL) +
+        ylab("Node Degree") +
+        ylim(0, 8) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig5-bw.png", width = 16, height = 9)
+```
+
 ## Figure 6. Transitivity in r/Teachers and r/education
 
 ```{r transitivity, include=FALSE}
@@ -1229,6 +1377,60 @@ ggplot(data = plot_transitivity,
 ggsave("output/fig6-transitivity.png", width = 16, height = 9)
 ```
 
+```{r transitivity, include=FALSE}
+transitivity_teachers <- 
+        sapply(network_graph_teachers, transitivity) %>% 
+        round(4)
+transitivity_education <- 
+        sapply(network_graph_education, transitivity) %>% 
+        round(4)
+plot_transitivity <- 
+        as.data.frame(date_bin) %>%
+        cbind(transitivity_teachers) %>%
+        cbind(transitivity_education) %>%
+        pivot_longer(cols = -date_bin, 
+                     names_to = c("subreddit"),
+                     names_pattern = "transitivity_(.*)",
+                     values_to = "score"
+                     ) %>%
+        mutate(subreddit = if_else(subreddit == "teachers", 
+                                   "r/Teachers",
+                                   "r/education"
+                                   )
+               )
+```
+
+```{r, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = plot_transitivity, 
+       mapping = aes(x=date_bin, 
+                     y=score, 
+                     color=subreddit,
+                     group=subreddit
+                     )
+       ) +
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("gray70", "black")) + 
+        xlab(NULL) +
+        ylab("Transitivity Score") +
+        ylim(0, 0.03) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig6-bw.png", width = 16, height = 9)
+```
+
 ## Figure 7. Reciprocity in r/Teachers and r/education
 
 ```{r reciprocity, include=FALSE}
@@ -1283,6 +1485,37 @@ ggplot(data = plot_reciprocity,
 
 ```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig7-reciprocity.png", width = 16, height = 9)
+```
+
+```{r, include=TRUE, echo=FALSE, fig.width=16, fig.height=9}
+ggplot(data = plot_reciprocity, 
+       mapping = aes(x=date_bin, 
+                     y=score, 
+                     color=subreddit,
+                     group=subreddit
+                     )
+       ) +
+        geom_point(size = 12, alpha = .8) +
+        geom_line(size = 2) +
+        scale_color_manual(values = c("gray70", "black")) + 
+        xlab(NULL) +
+        ylab("Reciprocity Score") +
+        ylim(0, 0.008) +
+        theme_bw() +
+        theme(panel.grid.major = element_line(color = "gray30"),
+              panel.grid.minor = element_line(color = "white"),
+              axis.title=element_text(size=28, family='serif'),
+              axis.text=element_text(size=18, family='serif'),
+              legend.position='bottom',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=28, family='serif'), 
+              legend.text=element_text(size=24, family='serif')
+              ) +
+        labs(color='Subreddit:')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig7-bw.png", width = 16, height = 9)
 ```
 
 ## Figure 8. Network Visualizations of r/Teachers and r/education
@@ -1547,6 +1780,48 @@ post_plot +
 ggsave("output/fig9-post-plot-bar.png", width = 16, height = 18)
 ```
 
+```{r, echo=FALSE, fig.width=16, fig.height=18}
+post_plot <-
+        ggplot(data = post_comparison_to_plot,
+               aes(x = code, y = value, fill = subreddit)
+               ) +
+        geom_col(color = 'black',
+                 width = 0.5, 
+                 position = position_dodge(width = 0.5)) + 
+        scale_fill_manual(values = c("gray70", "black")) +
+        theme_bw() + 
+        facet_grid(rows = vars(post_semester))
+
+post_plot + 
+        xlab(NULL) +
+        ylab("Number of Posts") +
+        theme(axis.title = element_text(size = 28, 
+                                        family = 'serif'),
+              strip.text.y = element_text(size = 16, 
+                                          family = 'serif',
+                                          angle = 90),
+              axis.text.x = element_text(size = 24,
+                                         family='serif',
+                                         angle = 45, 
+                                         vjust = 1, hjust=1),
+              axis.text.y = element_text(size = 18, 
+                                         family='serif'),
+              #axis.ticks.x = element_line(size = 5),
+              axis.ticks.length = unit(.25, 'cm'),
+              panel.spacing = unit(2, 'lines'),
+              legend.position='top',
+              legend.box = 'vertical',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=32, family='serif'), 
+              legend.text=element_text(size=28, family='serif')
+              ) +
+        labs(fill = 'Subreddit')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig9-bw.png", width = 16, height = 18)
+```
+
 ```{r, echo=FALSE, fig.width=16, fig.height=9}
 post_teachers_to_plot <-
         post_comparison_to_plot %>%
@@ -1764,6 +2039,48 @@ response_plot +
 
 ```{r, include=FALSE, eval=FALSE}
 ggsave("output/fig10-response-plot-bar.png", width = 16, height = 18)
+```
+
+```{r, echo=FALSE, fig.width=16, fig.height=18}
+response_plot <-
+        ggplot(data = response_comparison_to_plot,
+               aes(x = code, y = value, fill = subreddit)
+               ) +
+        geom_col(color = 'black',
+                 width = 0.5, 
+                 position = position_dodge(width = 0.5)) + 
+        scale_fill_manual(values = c("gray70", "black")) +
+        theme_bw() + 
+        facet_grid(rows = vars(response_semester))
+
+response_plot + 
+        xlab(NULL) +
+        ylab("Number of Responses") +
+        theme(axis.title = element_text(size = 28, 
+                                        family = 'serif'),
+              strip.text.y = element_text(size = 16, 
+                                          family = 'serif',
+                                          angle = 90),
+              axis.text.x = element_text(size = 24,
+                                         family='serif',
+                                         angle = 45, 
+                                         vjust = 1, hjust=1),
+              axis.text.y = element_text(size = 18, 
+                                         family='serif'),
+              #axis.ticks.x = element_line(size = 5),
+              axis.ticks.length = unit(.25, 'cm'),
+              panel.spacing = unit(2, 'lines'),
+              legend.position='top',
+              legend.box = 'vertical',
+              legend.box.background = element_rect(),
+              legend.title=element_text(size=32, family='serif'), 
+              legend.text=element_text(size=28, family='serif')
+              ) +
+        labs(fill = 'Subreddit')
+```
+
+```{r, include=FALSE, eval=FALSE}
+ggsave("output-bw/fig10-bw.png", width = 16, height = 18)
 ```
 
 ```{r, echo=FALSE, fig.width=16, fig.height=9}
